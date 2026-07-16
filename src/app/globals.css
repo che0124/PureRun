@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* =========================================
+     Semantic Theme Colors (Stage 1 Base)
+     ========================================= */
+  --color-background: #020617; /* slate-950 for deep app background */
+  --color-surface: #0f172a; /* slate-900 for cards */
+  --color-surface-hover: #1e293b; /* slate-800 for card hover */
+  --color-border: #1e293b; /* slate-800 for subtle borders */
+  
+  --color-primary: #10b981; /* emerald-500 as main brand color */
+  --color-primary-hover: #059669; /* emerald-600 */
+  --color-primary-light: #34d399; /* emerald-400 for glowing highlights */
+
+  /* Preserving existing custom variables */
+  --color-slate-850: #151e2e;
+  --color-emerald-450: #10b981;
+  --color-emerald-455: #059669;
+}
+
+  @utility pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* =========================================
+     Custom Glass Card Utility (Stage 1 Base)
+     ========================================= */
+  @utility card-glass {
+    background-color: color-mix(in srgb, var(--color-surface) 60%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.4);
+    border-radius: 1.5rem; /* rounded-3xl standard */
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+    
+    &:hover {
+      border-color: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.08);
+    }
+  }
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+  background-color: var(--color-background);
+  color: #f1f5f9; /* slate-100 base text */
+}
+
+body {
+  overscroll-behavior-y: none; /* Prevents pull-to-refresh white bounce on mobile */
+}
