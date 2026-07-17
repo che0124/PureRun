@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const normalized = runs.map((a: any) => normalizeActivity(a));
 
     // 準備 GPX 儲存目錄
-    const gpxDir = path.join(process.cwd(), 'data', 'gpx');
+    const gpxDir = process.env.VERCEL ? '/tmp/gpx' : path.join(process.cwd(), 'data', 'gpx');
     await fs.mkdir(gpxDir, { recursive: true });
 
     // 2. 迴圈比對 Prisma 資料庫
