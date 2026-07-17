@@ -7,11 +7,13 @@ let dbUrl = process.env.DATABASE_URL || "file:./dev.db";
 // Fallback for Vercel Serverless environment (which is read-only except for /tmp)
 if (process.env.VERCEL && !process.env.DATABASE_URL) {
   const tmpDbPath = '/tmp/dev.db';
-  const localDbPath = path.join(process.cwd(), 'dev.db');
+  const localDbPath = path.join(process.cwd(), 'prisma', 'dev.db');
   
   if (!fs.existsSync(tmpDbPath)) {
     if (fs.existsSync(localDbPath)) {
       fs.copyFileSync(localDbPath, tmpDbPath);
+    } else {
+      console.warn("Could not find dev.db at " + localDbPath);
     }
   }
   dbUrl = `file:${tmpDbPath}`;
