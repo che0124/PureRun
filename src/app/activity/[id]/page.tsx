@@ -140,7 +140,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           </h1>
           <div className="flex items-center gap-2 text-slate-400 font-mono text-sm">
             <Calendar className="w-4 h-4" />
-            {activity.date}
+            {new Date(activity.date).toLocaleString('zh-TW')}
           </div>
         </div>
 
