@@ -6,7 +6,7 @@
   "private": false,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx prisma db push --accept-data-loss && next build",
     "start": "next start",
     "test:pwa": "npm run build && npm run start",
     "tunnel": "npx @cloudflare/cloudflared tunnel --url http://localhost:3000",
