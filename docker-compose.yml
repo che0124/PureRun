@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  purerun:
+    build: .
+    container_name: purerun-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - purerun-db:/app/prisma
+    restart: unless-stopped
+    # If you want to set any default environment variables for Docker, you can do it here:
+    # environment:
+    #   - NODE_ENV=production
+
+volumes:
+  purerun-db:
+    description: "Volume for storing the local SQLite database persistently"

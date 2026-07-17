@@ -8,7 +8,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "test:pwa": "npm run build && npm run start",
+    "tunnel": "npx @cloudflare/cloudflared tunnel --url http://localhost:3000",
+    "lint": "eslint",
+    "setup": "npm install && npx prisma db push && npm run dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
