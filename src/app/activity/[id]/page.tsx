@@ -26,7 +26,7 @@ import AiAnalysisButton from '@/components/AiAnalysisButton';
 import CircularProgress from '@/components/CircularProgress';
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function ActivityDetailPage({ params }: PageProps) {
