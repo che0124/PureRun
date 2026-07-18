@@ -3,9 +3,10 @@ const LS_KEY = 'purerun_creds_v2';
 export interface StoredCredentials {
   garminEmail:        string;
   garminPassword:     string;
+  stravaClientId:     string;
+  stravaClientSecret: string;
+  stravaRefreshToken: string;
   geminiApiKey:       string;
-  userGoal:           string; // Legacy field
-  planDuration:       number; // Legacy field
   
   // New structured fields for marathon periodization
   targetDistance:      string;    // '5K' | '10K' | '21K' | '42K'
@@ -36,9 +37,10 @@ export function loadCredentials(): StoredCredentials {
   const defaults: StoredCredentials = { 
     garminEmail: '', 
     garminPassword: '', 
+    stravaClientId: '',
+    stravaClientSecret: '',
+    stravaRefreshToken: '',
     geminiApiKey: '', 
-    userGoal: '', 
-    planDuration: 1, 
     runningDaysPerWeek: 4,
     targetDistance: '42K',
     targetDateType: 'weeks',

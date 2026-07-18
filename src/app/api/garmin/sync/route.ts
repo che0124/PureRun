@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 const { GarminConnect } = require('garmin-connect');
 import { normalizeActivity } from '@/lib/garmin';
+import { refreshStravaToken, fetchStravaActivities } from '@/lib/strava';
 import { prisma } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
@@ -11,48 +12,77 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
   try {
-    const { garminEmail, garminPassword } = await req.json();
+    const { garminEmail, garminPassword, stravaClientId, stravaClientSecret, stravaRefreshToken } = await req.json();
 
-    if (!garminEmail || !garminPassword) {
-      return NextResponse.json({ message: '請提供 Garmin 帳號密碼。' }, { status: 400 });
+    const hasGarmin = !!(garminEmail && garminPassword);
+    const hasStrava = !!(stravaClientId && stravaClientSecret && stravaRefreshToken);
+
+    if (!hasGarmin && !hasStrava) {
+      return NextResponse.json({ message: '請提供 Garmin 或 Strava 憑證。' }, { status: 400 });
     }
 
     // 處理 Demo 模式
-    const isDemo = garminEmail.toLowerCase() === 'demo' || garminEmail.toLowerCase() === 'demo@example.com';
+    const isDemo = hasGarmin && (garminEmail.toLowerCase() === 'demo' || garminEmail.toLowerCase() === 'demo@example.com');
     if (isDemo) {
       return NextResponse.json({ success: true, message: 'Demo 模式：略過實際同步' });
     }
 
-    const gcClient = new GarminConnect({ username: garminEmail, password: garminPassword });
-    const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
+    let normalized: any[] = [];
 
-    // 嘗試使用 Token 登入，失敗則重新登入
-    try {
-      await gcClient.loadTokenByFile(tokenFile);
-    } catch (err) {
-      await gcClient.login();
-      try { await gcClient.exportTokenToFile(tokenFile); } catch (e) {}
+    // --- Garmin Sync ---
+    if (hasGarmin && !isDemo) {
+      const gcClient = new GarminConnect({ username: garminEmail, password: garminPassword });
+      const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
+
+      try {
+        await gcClient.loadTokenByFile(tokenFile);
+      } catch (err) {
+        await gcClient.login();
+        try { await gcClient.exportTokenToFile(tokenFile); } catch (e) {}
+      }
+
+      let rawActivities: any[] = [];
+      try {
+        rawActivities = await gcClient.getActivities(0, 10);
+      } catch (apiErr: any) {
+        if (apiErr.response?.status === 401 || apiErr.response?.status === 403) {
+          await gcClient.login();
+          await gcClient.exportTokenToFile(tokenFile);
+          rawActivities = await gcClient.getActivities(0, 10);
+        } else {
+          throw apiErr;
+        }
+      }
+
+      const runs = rawActivities
+        .filter((a: any) => a.activityType?.typeKey === 'running' || a.activityType?.typeKey === 'treadmill_running')
+        .slice(0, 10);
+      const garminNormalized = runs.map((a: any) => {
+        const norm = normalizeActivity(a);
+        return { ...norm, source: 'Garmin' };
+      });
+      normalized = [...normalized, ...garminNormalized];
     }
 
-    // 1. 呼叫 Garmin API 取得最近 10 筆活動列表
-    let rawActivities: any[] = [];
-    try {
-      rawActivities = await gcClient.getActivities(0, 10);
-    } catch (apiErr: any) {
-      if (apiErr.response?.status === 401 || apiErr.response?.status === 403) {
-        await gcClient.login();
-        await gcClient.exportTokenToFile(tokenFile);
-        rawActivities = await gcClient.getActivities(0, 10);
-      } else {
-        throw apiErr;
+    // --- Strava Sync ---
+    if (hasStrava) {
+      try {
+        const tokens = await refreshStravaToken(stravaClientId, stravaClientSecret, stravaRefreshToken);
+        const stravaActs = await fetchStravaActivities(tokens.access_token, 10);
+        const stravaRuns = stravaActs.filter((a: any) => a.activityTypeKey === 'run' || a.activityTypeKey === 'virtualrun');
+        const stravaNormalized = stravaRuns.map((a: any) => ({ ...a, source: 'Strava' }));
+        normalized = [...normalized, ...stravaNormalized];
+      } catch (error: any) {
+        console.error('Strava Sync Error:', error);
+        // If Garmin succeeds but Strava fails, we might still want to proceed, or throw error depending on design.
+        // We'll throw to let user know Strava failed.
+        if (!hasGarmin) throw new Error(`Strava 授權失敗: ${error.message}`);
       }
     }
 
-    // 篩選跑步活動並轉換為共用格式
-    const runs = rawActivities
-      .filter((a: any) => a.activityType?.typeKey === 'running' || a.activityType?.typeKey === 'treadmill_running')
-      .slice(0, 10);
-    const normalized = runs.map((a: any) => normalizeActivity(a));
+    // Sort combined activities by date descending
+    normalized.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Deduplicate if needed, but for MVP we assume user uses either Garmin or Strava, or they are fine with both.
 
     // 準備 GPX 儲存目錄
     const gpxDir = process.env.VERCEL ? '/tmp/gpx' : path.join(process.cwd(), 'data', 'gpx');
@@ -68,10 +98,14 @@ export async function POST(req: Request) {
       });
 
       // 如果不存在，進一步呼叫 Garmin API 下載 GPX 檔案並存入本地資料夾
-      if (!existing) {
+      if (!existing && act.source === 'Garmin') {
         if (act.activityTypeKey !== 'indoor_running' && act.activityTypeKey !== 'treadmill_running') {
           try {
             // 下載 GPX 檔案
+            const gcClient = new GarminConnect({ username: garminEmail, password: garminPassword });
+            const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
+            await gcClient.loadTokenByFile(tokenFile);
+            
             const gpxData = await gcClient.get(`https://connectapi.garmin.com/download-service/export/gpx/activity/${act.activityId}`);
             const gpxPath = path.join(gpxDir, `${act.activityId}.gpx`);
             
@@ -95,8 +129,9 @@ export async function POST(req: Request) {
         },
         create: {
           activityId:      activityIdBigInt,
+          source:          act.source || 'Garmin',
           activityName:    act.activityName,
-          date:            act.date,
+          date:            new Date(act.date),
           distanceKm:      act.distanceKm,
           durationMin:     act.durationMin,
           avgHr:           act.avgHr,
@@ -110,6 +145,7 @@ export async function POST(req: Request) {
           cadence:         act.cadence,
           strideLength:    act.strideLength,
           trainingEffect:  act.trainingEffect,
+          routeData:       act.routeData || null,
         }
       });
 
@@ -216,9 +252,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Garmin 數據同步成功！' });
+    return NextResponse.json({ success: true, message: '數據同步成功！' });
   } catch (error: any) {
-    console.error('Garmin Sync Error:', error);
-    return NextResponse.json({ message: 'Garmin 同步失敗，請確認帳號密碼。', details: error.message }, { status: 502 });
+    console.error('Sync Error:', error);
+    return NextResponse.json({ message: '同步失敗，請確認憑證是否正確。', details: error.message }, { status: 502 });
   }
 }

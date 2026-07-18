@@ -19,6 +19,7 @@ model GarminStats {
 
 model GarminActivity {
   activityId      BigInt   @id
+  source          String   @default("Garmin") // "Garmin" or "Strava"
   activityName    String
   date            DateTime // 建議從 String 更改為 DateTime，方便日後範圍查詢與排序
   distanceKm      Float    // 距離（公里），維持 Float
