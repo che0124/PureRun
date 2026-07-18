@@ -1,24 +1,24 @@
 import { NextResponse } from 'next/server';
 const { GarminConnect } = require('garmin-connect');
 import { normalizeActivity } from '@/lib/garmin';
-import { refreshStravaToken, fetchStravaActivities } from '@/lib/strava';
+
 import { prisma } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { cookies } from 'next/headers';
 
 // 延遲輔助函數
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
   try {
-    const { garminEmail, garminPassword, stravaClientId, stravaClientSecret, stravaRefreshToken } = await req.json();
+    const { garminEmail, garminPassword } = await req.json();
 
     const hasGarmin = !!(garminEmail && garminPassword);
-    const hasStrava = !!(stravaClientId && stravaClientSecret && stravaRefreshToken);
 
-    if (!hasGarmin && !hasStrava) {
-      return NextResponse.json({ message: '請提供 Garmin 或 Strava 憑證。' }, { status: 400 });
+    if (!hasGarmin) {
+      return NextResponse.json({ message: '請提供 Garmin 憑證。' }, { status: 400 });
     }
 
     // 處理 Demo 模式
@@ -64,21 +64,6 @@ export async function POST(req: Request) {
       normalized = [...normalized, ...garminNormalized];
     }
 
-    // --- Strava Sync ---
-    if (hasStrava) {
-      try {
-        const tokens = await refreshStravaToken(stravaClientId, stravaClientSecret, stravaRefreshToken);
-        const stravaActs = await fetchStravaActivities(tokens.access_token, 10);
-        const stravaRuns = stravaActs.filter((a: any) => a.activityTypeKey === 'run' || a.activityTypeKey === 'virtualrun');
-        const stravaNormalized = stravaRuns.map((a: any) => ({ ...a, source: 'Strava' }));
-        normalized = [...normalized, ...stravaNormalized];
-      } catch (error: any) {
-        console.error('Strava Sync Error:', error);
-        // If Garmin succeeds but Strava fails, we might still want to proceed, or throw error depending on design.
-        // We'll throw to let user know Strava failed.
-        if (!hasGarmin) throw new Error(`Strava 授權失敗: ${error.message}`);
-      }
-    }
 
     // Sort combined activities by date descending
     normalized.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

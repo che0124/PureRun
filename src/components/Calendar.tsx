@@ -173,22 +173,26 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
 
       {/* Details Modal */}
       {selectedWorkout && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-300">
-          <div className="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-md p-6 sm:rounded-3xl rounded-t-3xl shadow-2xl relative animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 duration-300 space-y-6 pb-safe">
-            <button 
-              onClick={() => setSelectedWorkout(null)} 
-              className="absolute top-4 right-4 text-slate-450 hover:text-slate-200 transition duration-200 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            <div className="pt-2">
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-300 z-[100]">
+          <div className="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-md sm:rounded-3xl rounded-t-3xl shadow-2xl relative animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 duration-300 flex flex-col max-h-[90vh] sm:max-h-[85vh]">
+            <div className="flex justify-between items-center p-6 pb-4 shrink-0 border-b border-slate-800">
               <span className={`text-[10px] px-3 py-1 rounded-full border uppercase tracking-widest font-bold ${
                 TYPE_STYLE[selectedWorkout.workout_type]?.bg
               } ${TYPE_STYLE[selectedWorkout.workout_type]?.text} ${TYPE_STYLE[selectedWorkout.workout_type]?.border}`}>
                 {TYPE_NAME_ZH[selectedWorkout.workout_type]}
               </span>
-              <h3 className="text-2xl font-bold text-slate-50 mt-4 font-sans leading-tight tracking-tight">{selectedWorkout.title}</h3>
+              <button 
+                onClick={() => setSelectedWorkout(null)} 
+                className="text-slate-450 hover:text-slate-200 transition duration-200 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-6 pt-2 space-y-6 pb-8 custom-scrollbar">
+            
+            <div className="pt-2">
+              <h3 className="text-2xl font-bold text-slate-50 mt-1 font-sans leading-tight tracking-tight">{selectedWorkout.title}</h3>
               <p className="text-sm text-slate-400 mt-2 font-mono flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 {selectedWorkout.date}
@@ -217,7 +221,7 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
                   <Target className="w-4 h-4 text-emerald-400" />
                   <span>教練指導與步驟</span>
                 </h4>
-                <div className="text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-5 rounded-2xl border border-slate-850">
+                <div className="text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-5 rounded-2xl border border-slate-850 whitespace-pre-wrap selection:bg-emerald-500/30">
                   {selectedWorkout.description || '無詳細說明。'}
                 </div>
               </div>
@@ -229,25 +233,40 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
                       <Award className="w-4 h-4 text-amber-400" />
                       <span>執行成效</span>
                     </h4>
-                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                      selectedWorkout.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                      selectedWorkout.status === 'Missed' ? 'bg-rose-500/10 text-rose-455 border border-rose-500/20' :
-                      'bg-slate-950 text-slate-400 border border-slate-800'
-                    }`}>
-                      {selectedWorkout.status === 'Completed' ? '✅ 已完成' :
-                       selectedWorkout.status === 'Missed' ? '❌ 未執行' : '⏳ 待執行'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedWorkout.compliance_rate !== undefined && selectedWorkout.status === 'Completed' && (
+                        <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          達成率 {selectedWorkout.compliance_rate}%
+                        </span>
+                      )}
+                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
+                        selectedWorkout.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                        selectedWorkout.status === 'Missed' ? 'bg-rose-500/10 text-rose-455 border border-rose-500/20' :
+                        'bg-slate-950 text-slate-400 border border-slate-800'
+                      }`}>
+                        {selectedWorkout.status === 'Completed' ? '✅ 已完成' :
+                         selectedWorkout.status === 'Missed' ? '❌ 未執行' : '⏳ 待執行'}
+                      </span>
+                    </div>
                   </div>
 
                   {selectedWorkout.status === 'Completed' ? (
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl text-center">
-                        <span className="text-[10px] text-slate-500 block uppercase font-bold">距離</span>
-                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_distance} km</span>
+                      <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-xl text-center hover:border-emerald-500/30 transition-colors">
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">實際距離</span>
+                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_distance?.toFixed(2) || '--'} <span className="text-[10px] text-slate-500 font-sans font-normal">km</span></span>
                       </div>
-                      <div className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl text-center">
-                        <span className="text-[10px] text-slate-500 block uppercase font-bold">配速</span>
-                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_pace_str}</span>
+                      <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-xl text-center hover:border-emerald-500/30 transition-colors">
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">實際配速</span>
+                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_pace_str || '--'} <span className="text-[10px] text-slate-500 font-sans font-normal">/km</span></span>
+                      </div>
+                      <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-xl text-center hover:border-emerald-500/30 transition-colors">
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">訓練時間</span>
+                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_duration ? Math.floor(selectedWorkout.actual_duration) : '--'} <span className="text-[10px] text-slate-500 font-sans font-normal">min</span></span>
+                      </div>
+                      <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-xl text-center hover:border-emerald-500/30 transition-colors">
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">平均心率</span>
+                        <span className="text-base font-extrabold text-slate-100 mt-1 block font-mono">{selectedWorkout.actual_avg_hr ? Math.round(selectedWorkout.actual_avg_hr) : '--'} <span className="text-[10px] text-slate-500 font-sans font-normal">bpm</span></span>
                       </div>
                     </div>
                   ) : selectedWorkout.status === 'Missed' ? (
@@ -261,6 +280,7 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
                   )}
                 </div>
               )}
+            </div>
             </div>
           </div>
         </div>

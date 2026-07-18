@@ -119,9 +119,15 @@ export async function POST(req: Request) {
       for (const w of workouts) {
         if (w.workoutType === 'Rest') continue;
         
+        const startDate = new Date(`${w.date}T00:00:00.000Z`);
+        const endDate = new Date(`${w.date}T23:59:59.999Z`);
+        
         const match = await tx.garminActivity.findFirst({
           where: {
-            date: w.date,
+            date: {
+              gte: startDate,
+              lte: endDate
+            },
             activityTypeKey: { contains: 'running' }
           }
         });

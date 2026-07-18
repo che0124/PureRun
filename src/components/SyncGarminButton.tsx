@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { loadCredentials } from '@/lib/credentials';
 import { useRouter } from 'next/navigation';
 import { RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -15,21 +15,30 @@ export default function SyncGarminButton() {
     if (status === 'syncing') return;
 
     const creds = loadCredentials();
-    if (!creds.garminEmail || !creds.garminPassword) {
+    const hasGarmin = !!(creds.garminEmail && creds.garminPassword);
+    const hasStrava = !!(creds.stravaClientId && creds.stravaClientSecret && creds.stravaRefreshToken);
+
+    if (!hasGarmin && !hasStrava) {
       setStatus('no_creds');
       setTimeout(() => setStatus('idle'), 3000);
       return;
     }
 
     setStatus('syncing');
-    
+
     try {
       const res = await fetch('/api/garmin/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ garminEmail: creds.garminEmail, garminPassword: creds.garminPassword }),
+        body: JSON.stringify({
+          garminEmail: creds.garminEmail,
+          garminPassword: creds.garminPassword,
+          stravaClientId: creds.stravaClientId,
+          stravaClientSecret: creds.stravaClientSecret,
+          stravaRefreshToken: creds.stravaRefreshToken
+        }),
       });
-      
+
       if (res.ok) {
         setStatus('success');
         router.refresh();
@@ -40,7 +49,7 @@ export default function SyncGarminButton() {
       setStatus('timeout');
     } finally {
       // Revert back to idle after 3 seconds
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => setStatus('idle'), 5000);
     }
   };
 
@@ -107,7 +116,7 @@ export default function SyncGarminButton() {
   };
 
   return (
-    <button 
+    <button
       className={`relative group overflow-hidden px-3.5 py-1.5 font-mono font-bold rounded-xl border transition-all duration-300 disabled:opacity-50 text-[10px] tracking-wider uppercase select-none ${getButtonStyle()}`}
       onClick={handleSync}
       disabled={status === 'syncing'}

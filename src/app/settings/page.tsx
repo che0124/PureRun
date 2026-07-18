@@ -14,15 +14,11 @@ import {
   XCircle
 } from 'lucide-react';
 import HeartRateZoneSettings, { HRCalcMethod, HRZonesBPM } from '@/components/settings/HeartRateZoneSettings';
-
 type GarminStatus = 'idle' | 'testing' | 'success' | 'error';
 
 export default function SettingsPage() {
   const [garminEmail,    setGarminEmail]    = useState('');
   const [garminPassword, setGarminPassword] = useState('');
-  const [stravaClientId,     setStravaClientId]     = useState('');
-  const [stravaClientSecret, setStravaClientSecret] = useState('');
-  const [stravaRefreshToken, setStravaRefreshToken] = useState('');
   const [geminiApiKey,   setGeminiApiKey]   = useState('');
   const [showPassword,   setShowPassword]   = useState(false);
 
@@ -42,9 +38,6 @@ export default function SettingsPage() {
     const saved = loadCredentials();
     setGarminEmail(saved.garminEmail);
     setGarminPassword(saved.garminPassword);
-    setStravaClientId(saved.stravaClientId || '');
-    setStravaClientSecret(saved.stravaClientSecret || '');
-    setStravaRefreshToken(saved.stravaRefreshToken || '');
     setGeminiApiKey(saved.geminiApiKey);
     
     setMinHr(saved.minHr || 50);
@@ -62,6 +55,7 @@ export default function SettingsPage() {
       setGarminStatus('success');
       setGarminMessage('已經載入儲存的帳戶');
     }
+
   }, []);
 
   const handleTestGarmin = async () => {
@@ -103,9 +97,6 @@ export default function SettingsPage() {
       ...current, 
       garminEmail, 
       garminPassword, 
-      stravaClientId,
-      stravaClientSecret,
-      stravaRefreshToken,
       geminiApiKey,
       hrCalcMethod,
       minHr,
@@ -209,50 +200,6 @@ export default function SettingsPage() {
                   <span>{garminMessage}</span>
                 </span>
               )}
-            </div>
-          </div>
-
-          {/* Strava Section */}
-          <div className="space-y-4 pt-4 border-t border-slate-800">
-            <h3 className="text-lg font-bold text-slate-50 border-b border-slate-800 pb-3 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-orange-500" />
-              <span>Strava 帳戶連接 (選填)</span>
-            </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              若您使用非 Garmin 手錶，可透過 Strava API 同步資料。請前往 Strava API 設定頁面取得 Client ID、Client Secret 與 Refresh Token。
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Client ID</label>
-                <input
-                  type="text"
-                  className="w-full bg-slate-950 border border-slate-850 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/40 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-600 transition outline-none"
-                  value={stravaClientId}
-                  onChange={e => setStravaClientId(e.target.value)}
-                  placeholder="e.g. 123456"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Client Secret</label>
-                <input
-                  type="password"
-                  className="w-full bg-slate-950 border border-slate-850 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/40 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-600 transition outline-none"
-                  value={stravaClientSecret}
-                  onChange={e => setStravaClientSecret(e.target.value)}
-                  placeholder="請輸入 Secret"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Refresh Token</label>
-                <input
-                  type="password"
-                  className="w-full bg-slate-950 border border-slate-850 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/40 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-600 transition outline-none"
-                  value={stravaRefreshToken}
-                  onChange={e => setStravaRefreshToken(e.target.value)}
-                  placeholder="請輸入 Refresh Token"
-                />
-              </div>
             </div>
           </div>
 
