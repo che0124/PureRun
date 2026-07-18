@@ -33,6 +33,8 @@ export async function refreshStravaToken(clientId: string, clientSecret: string,
       client_secret: clientSecret,
       grant_type: 'refresh_token',
       refresh_token: refreshToken
+    }, {
+      headers: { 'Accept-Encoding': 'gzip' }
     });
     return res.data; // { access_token, refresh_token, expires_at }
   } catch (error: any) {
@@ -43,7 +45,10 @@ export async function refreshStravaToken(clientId: string, clientSecret: string,
 export async function fetchStravaActivities(accessToken: string, limit: number = 10): Promise<NormalizedActivity[]> {
   try {
     const res = await axios.get(`https://www.strava.com/api/v3/athlete/activities?per_page=${limit}`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+      headers: { 
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept-Encoding': 'gzip'
+      }
     });
     
     const activities = res.data;
