@@ -1,49 +1,51 @@
-# 軟體需求設計文件 (SDD)：AI Runner Companion (MVP 階段)
+# 軟體需求設計文件 (SDD)：PureRun (AI Runner Companion)
 
 ## 1. 專案概述
-本專案旨在解決跑者在諮詢 AI 訓練規劃時，缺乏數據聯動與長期訓練追蹤的問題。透過與 Garmin Connect API 整合，系統能根據跑者的生理數值（如活動紀錄、心率、配速）動態調整並生成 AI 課表，並提供前端可視化的追蹤介面。
+本專案 (PureRun) 旨在解決跑者在諮詢 AI 訓練規劃時，缺乏數據聯動與長期訓練追蹤的問題。透過與 Garmin Connect 整合，系統能根據跑者的實際生理數值（如活動紀錄、心率、配速）動態調整並生成 AI 課表，並提供前端可視化的追蹤介面與互動式路線圖 (GPX)。系統主打隱私優先 (Privacy First)，所有資料儲存於本地端。
 
 ## 2. 系統架構設計
 
 ### 2.1 核心模組
-* **前端介面 (Client UI)：** 訓練日曆、儀表板與 AI 建議展示介面。
-* **後端中樞 (API Routes)：** 處理 Garmin 數據回呼 (Webhook/Sync) 與建構 AI 請求的 Prompt Context。
-* **使用者與狀態引擎 (Database)：** 儲存跑者的歷史紀錄、目標、身體素質及課表執行狀態。
-* **AI 規劃引擎 (AI Engine)：** 讀取用戶目標與生理數據，輸出結構化的每日訓練課表。
-* **數據同步模組 (Integration)：** 透過 Garmin Health API 獲取每日訓練活動與健康數據。
+* **前端介面 (Client UI)：** 訓練日曆、儀表板、互動式路線地圖與 AI 建議展示介面。
+* **後端中樞 (API Routes/Server Actions)：** 處理 Garmin 數據同步與建構 AI 請求的 Prompt Context。
+* **本地狀態引擎 (Database)：** 使用本地 SQLite 儲存跑者的訓練紀錄、活動詳情、與課表執行狀態，不需雲端資料庫。
+* **AI 規劃引擎 (AI Engine)：** 串接 Google Gemini AI，讀取跑者的生理數據與活動表現，輸出結構化的訓練課表。
+* **數據同步模組 (Integration)：** 透過 Garmin Connect 帳密即時拉取用戶的活動數據與統計。
 
 ## 3. 關鍵功能需求 (Functional Requirements)
 
 ### 3.1 數據同步機制
-* **API 授權：** 使用 OAuth 2.0 處理 Garmin Connect 用戶授權。
-* **定期拉取/接收：** 系統同步跑者訓練數據，將 JSON 格式的活動紀錄轉換為 AI 易讀的摘要。
+* **本地憑證：** 於系統設定頁面輸入 Garmin 帳號密碼進行即時驗證與拉取（憑證不存入資料庫）。
+* **活動拉取與解析：** 系統同步近期訓練活動、統計數據 (GarminStats)，以及解析 GPX 路線。
 
 ### 3.2 具備記憶的 AI 交互
-* **上下文管理：** 產出課表時，動態注入「用戶目標」、「近 7 天訓練狀態」與「Garmin 生理指標」。
-* **結構化輸出：** 強制 AI 輸出符合前端日曆元件所需之 JSON 格式。
-* **執行狀態追蹤：** 支援「待執行」、「已完成」、「未達標」狀態標記，作為下次回饋迴圈的依據。
+* **上下文管理：** 產出課表時，動態注入「近期訓練負荷 (Training Load)」、「近期配速/心率」等本地分析的 Garmin 生理指標。
+* **結構化輸出：** 強制 AI 輸出符合前端日曆與計畫清單所需之 JSON 格式。
+* **執行狀態追蹤：** 支援「待執行 (Pending)」、「已完成 (Completed)」、「未達標 (Missed)」狀態。
 
-## 4. 資料模型設計 (Data Schema - Supabase 規劃)
+## 4. 資料模型設計 (Data Schema - Prisma/SQLite)
 
-* **users:** `id` (UUID), `goal`, `vdot_score`, `garmin_token`, `created_at`
-* **training_plans:** `id`, `user_id`, `start_date`, `end_date`, `status`, `ai_summary`
-* **workouts:** `id`, `plan_id`, `date`, `workout_type`, `target_metrics` (JSONB), `garmin_activity_id` (可為空), `actual_metrics` (JSONB), `status`
+* **GarminStats:** 記錄每週總跑量、平均心率、配速及預估 VDOT。
+* **GarminActivity:** 記錄單次活動詳細數據（距離、時間、心率、配速、步頻、步幅、高階訓練指標）及 GPX 路徑關聯。
+* **TrainingPlan:** 記錄計畫起始時間與 AI 分析建議 (weeklyAnalysis)。
+* **Workout:** 記錄每日具體課表內容（類型、目標配速、目標心率）與實際執行結果（達成率、AI 回饋）。
+* **FitnessStatus:** 記錄跑者的 CTL (體能)、ATL (疲勞)、TSB (狀況) 等高階長期負荷指標。
 
 ## 5. 技術堆疊建議 (MVP 版本)
 
 | 模組 | 選用技術 | 說明 |
 | :--- | :--- | :--- |
-| **全端框架** | Next.js (React) | 使用 TypeScript 統一前後端開發，利用 API Routes 處理後端邏輯。 |
-| **資料庫 & 驗證**| Supabase (PostgreSQL) | 處理關聯資料與 JSONB 儲存，內建 Auth 解決用戶登入。 |
-| **第三方整合** | Garmin Health API | 獲取每日活動紀錄與健康狀態。 |
-| **AI 引擎** | Gemini 1.5 Flash / Pro (開發初期可於地端環境呼叫 API 或測試 Gemma 模型) | 利用超大 Context Window 處理長時間序列的 Garmin 數據，並強制輸出 JSON 格式。 |
+| **全端框架** | Next.js (React) | 使用 TypeScript，以 App Router 與 Tailwind CSS 建構 PWA 就緒的前端。 |
+| **資料庫 & ORM**| SQLite + Prisma | 實現本地端「隱私優先」資料儲存，依賴 Prisma 進行資料關聯映射。 |
+| **第三方整合** | Garmin Connect API | 獲取活動紀錄、統計數值與 GPX 資料。 |
+| **AI 引擎** | Google Gemini | 利用長上下文處理序列活動數據，提供高度個人化的教練分析。 |
 
 ## 6. 系統執行流程
-1. **初始化與授權：** 用戶登入系統並完成 Garmin 帳戶綁定。
-2. **數據拉取與基準建立：** 系統取得近期歷史數據，交由 Gemini 建立跑者當前體能基準。
-3. **課表生成 (Prompting)：** Next.js 後端組合數據上下文，請求 Gemini 生成未來一週課表 (JSON 格式)。
-4. **前端渲染：** 將結構化課表存入 Supabase，並渲染至前端的 React 日曆元件上。
-5. **回饋迴圈：** 實際訓練完成後，Garmin 數據同步回 Supabase，作為下週 AI 生成課表的修正依據。
+1. **初始化與設定：** 用戶透過設定頁面輸入 Garmin 憑證與 Gemini API Key。
+2. **數據拉取與基準建立：** 觸發同步，透過 API 抓取近期的 Garmin 跑步數據存入本地 SQLite。
+3. **課表生成 (Prompting)：** 將 SQLite 中的體能狀況與歷史活動轉為上下文，請求 Gemini 生成訓練計畫與課表。
+4. **前端渲染：** 儲存結構化課表至本地庫，並渲染於 Next.js 儀表板與日曆元件上。
+5. **回饋迴圈：** 實際訓練同步後，系統計算課表達成率 (Compliance Rate)，作為後續 AI 調整的參考。
 
 ## 7. AI 整合規範 (JSON Schema)
 為確保 Next.js 前端穩定渲染，AI 必須嚴格輸出以下 JSON 結構：
@@ -62,3 +64,4 @@
     }
   ]
 }
+```
