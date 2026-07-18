@@ -11,6 +11,8 @@
     "test:pwa": "npm run build && npm run start",
     "tunnel": "npx @cloudflare/cloudflared tunnel --url http://localhost:3000",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "setup": "npm install && npx prisma db push && npm run dev"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "eslint-config-next": "16.2.10",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

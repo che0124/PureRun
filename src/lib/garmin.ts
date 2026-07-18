@@ -40,7 +40,7 @@ export interface RunnerStats {
 
 // ── Helper: convert m/s → pace (min/km) ────────────────────────────────────
 
-function speedToPaceStr(metersPerSec: number): string | null {
+export function speedToPaceStr(metersPerSec: number): string | null {
   if (!metersPerSec || metersPerSec <= 0) return null;
   const minPerKm = 1000 / 60 / metersPerSec;
   const mins = Math.floor(minPerKm);
