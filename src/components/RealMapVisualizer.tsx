@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { LatLngTuple } from 'leaflet';
@@ -17,19 +17,18 @@ const createDotIcon = (color: string) => {
 };
 
 export default function RealMapVisualizer({ routeData }: { routeData?: string }) {
-  const [points, setPoints] = useState<LatLngTuple[] | null>(null);
-
-  useEffect(() => {
+  const points = useMemo<LatLngTuple[] | null>(() => {
     if (routeData) {
       try {
         const parsed = JSON.parse(routeData);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setPoints(parsed);
+          return parsed;
         }
-      } catch (e) {
-        console.error("Failed to parse routeData", e);
+      } catch {
+        console.error("Failed to parse routeData");
       }
     }
+    return null;
   }, [routeData]);
 
   if (!points || points.length === 0) {

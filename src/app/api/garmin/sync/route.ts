@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GarminConnect } = require('garmin-connect');
 import { normalizeActivity } from '@/lib/garmin';
 
@@ -6,7 +7,7 @@ import { prisma } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { cookies } from 'next/headers';
+
 
 // 延遲輔助函數
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: 'Demo 模式：略過實際同步' });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let normalized: any[] = [];
 
     // --- Garmin Sync ---
@@ -36,27 +38,31 @@ export async function POST(req: Request) {
 
       try {
         await gcClient.loadTokenByFile(tokenFile);
-      } catch (err) {
+      } catch {
         await gcClient.login();
-        try { await gcClient.exportTokenToFile(tokenFile); } catch (e) {}
+        try { await gcClient.exportTokenToFile(tokenFile); } catch {}
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawActivities: any[] = [];
       try {
         rawActivities = await gcClient.getActivities(0, 10);
-      } catch (apiErr: any) {
-        if (apiErr.response?.status === 401 || apiErr.response?.status === 403) {
+      } catch (apiErr: unknown) {
+        const err = apiErr as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (err.response?.status === 401 || err.response?.status === 403) {
           await gcClient.login();
           await gcClient.exportTokenToFile(tokenFile);
           rawActivities = await gcClient.getActivities(0, 10);
         } else {
-          throw apiErr;
+          throw err;
         }
       }
 
       const runs = rawActivities
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((a: any) => a.activityType?.typeKey === 'running' || a.activityType?.typeKey === 'treadmill_running')
         .slice(0, 10);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const garminNormalized = runs.map((a: any) => {
         const norm = normalizeActivity(a);
         return { ...norm, source: 'Garmin' };
@@ -99,8 +105,8 @@ export async function POST(req: Request) {
             } else if (typeof gpxData === 'object') {
               await fs.writeFile(gpxPath, JSON.stringify(gpxData));
             }
-          } catch (error: any) {
-            console.error(`Failed to download GPX for activity ${act.activityId}:`, error.message);
+          } catch (error: unknown) {
+            console.error(`Failed to download GPX for activity ${act.activityId}:`, error instanceof Error ? error.message : String(error));
           }
         }
       }
@@ -202,6 +208,7 @@ export async function POST(req: Request) {
 
       // 在已同步的活動中尋找同一天的跑步記錄
       const match = allActivities.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (act: any) => act.date === w.date && act.activityTypeKey.includes('running')
       );
 
@@ -238,8 +245,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, message: '數據同步成功！' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sync Error:', error);
-    return NextResponse.json({ message: '同步失敗，請確認憑證是否正確。', details: error.message }, { status: 502 });
+    return NextResponse.json({ message: '同步失敗，請確認憑證是否正確。', details: error instanceof Error ? error.message : String(error) }, { status: 502 });
   }
 }

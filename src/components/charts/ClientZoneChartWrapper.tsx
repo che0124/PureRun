@@ -1,17 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import ZoneDistributionChart from './ZoneDistributionChart';
 import { loadCredentials } from '@/lib/credentials';
 
 interface Props {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activities: any[];
 }
 
 export default function ClientZoneChartWrapper({ activities }: Props) {
-  const [zones, setZones] = useState<any[]>([]);
-
-  useEffect(() => {
+  const zones = useMemo(() => {
     const creds = loadCredentials();
     const z1Max = creds.hrZone1Max || 130;
     const z2Max = creds.hrZone2Max || 150;
@@ -24,6 +23,7 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
       if (act.metricsData) {
         try {
           const metrics = JSON.parse(act.metricsData);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           metrics.forEach((m: any) => {
             if (m.hr) {
               if (m.hr < z1Max) z1++;
@@ -33,7 +33,7 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
               else z5++;
             }
           });
-        } catch(e) {}
+        } catch {}
       } else if (act.avgHr) {
           const durationMins = act.durationMin;
           if (act.avgHr < z1Max) z1 += durationMins;
@@ -45,7 +45,7 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
     });
 
     const totalZonePoints = z1 + z2 + z3 + z4 + z5;
-    const hrZones = totalZonePoints > 0 ? [
+    return totalZonePoints > 0 ? [
       { name: `Z1 恢復 (<${z1Max})`, value: Number(((z1 / totalZonePoints) * 100).toFixed(1)), color: '#94a3b8' },
       { name: `Z2 有氧 (${z1Max}-${z2Max - 1})`, value: Number(((z2 / totalZonePoints) * 100).toFixed(1)), color: '#3b82f6' },
       { name: `Z3 節奏 (${z2Max}-${z3Max - 1})`, value: Number(((z3 / totalZonePoints) * 100).toFixed(1)), color: '#10b981' },
@@ -58,8 +58,6 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
       { name: `Z4 乳酸`, value: 10, color: '#f59e0b' },
       { name: `Z5 無氧`, value: 5, color: '#ef4444' },
     ];
-
-    setZones(hrZones);
   }, [activities]);
 
   if (zones.length === 0) return null;

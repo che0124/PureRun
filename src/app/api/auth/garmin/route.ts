@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
-  } catch (err: any) {
-    console.error('[/api/auth/garmin] Error:', err?.message);
+  } catch (err: unknown) {
+    console.error('[/api/auth/garmin] Error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json(
       { success: false, error: 'Server error during Garmin authentication.' },
       { status: 500 }

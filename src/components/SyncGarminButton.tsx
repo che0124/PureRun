@@ -45,7 +45,7 @@ export default function SyncGarminButton() {
       } else {
         setStatus('error');
       }
-    } catch (e: any) {
+    } catch {
       setStatus('timeout');
     } finally {
       // Revert back to idle after 3 seconds

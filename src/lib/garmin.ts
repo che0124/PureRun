@@ -4,6 +4,7 @@
  * BYOC model: credentials are passed per-request, never stored server-side.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { GarminConnect } = require('garmin-connect');
 import type { IActivity } from 'garmin-connect/dist/garmin/types/activity';
 
@@ -114,42 +115,47 @@ export async function fetchGarminData(
   count: number = 14
 ): Promise<RunnerStats> {
   const gc = new GarminConnect({ username: email, password });
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const os = require('os');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const path = require('path');
   const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
 
   try {
     await gc.loadTokenByFile(tokenFile);
-  } catch (err) {
+  } catch {
     await gc.login();
-    try { await gc.exportTokenToFile(tokenFile); } catch (e) {}
+    try { await gc.exportTokenToFile(tokenFile); } catch {}
   }
 
   // Fetch recent activities (all types)
   let rawActivities;
   try {
     rawActivities = await gc.getActivities(0, count);
-  } catch (apiErr: any) {
-    if (apiErr.response?.status === 401 || apiErr.response?.status === 403) {
+  } catch (apiErr: unknown) {
+    const err = apiErr as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (err.response?.status === 401 || err.response?.status === 403) {
       await gc.login();
       await gc.exportTokenToFile(tokenFile);
       rawActivities = await gc.getActivities(0, count);
     } else {
-      throw apiErr;
+      throw err;
     }
   }
 
   // Filter to running activities only
   const RUNNING_KEYS = ['running', 'street_running', 'trail_running', 'indoor_running', 'track_running'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runningRaw = rawActivities.filter((a: any) =>
     RUNNING_KEYS.some(k => (a.activityType?.typeKey ?? '').includes(k))
   );
 
   // Fallback: if no running found, take all activities
-  let toProcess = runningRaw.length > 0 ? runningRaw : rawActivities;
+  const toProcess = runningRaw.length > 0 ? runningRaw : rawActivities;
   
   // Optionally cap the number of details fetched to avoid hitting rate limits too hard
   const fetchLimit = 5; 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activities: NormalizedActivity[] = toProcess.map((a: any) => normalizeActivity(a));
 
   // Now, fetch route polyline for the top N recent outdoor activities
@@ -164,7 +170,9 @@ export async function fetchGarminData(
       const details = await gc.get(`/activity-service/activity/${act.activityId}/details`);
       if (details && details.geoPolylineDTO && details.geoPolylineDTO.polyline) {
         const points = details.geoPolylineDTO.polyline
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .filter((p: any) => p.lat && p.lon)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((p: any) => [p.lat, p.lon]);
         
         if (points.length > 0) {
@@ -173,7 +181,7 @@ export async function fetchGarminData(
       }
       // Brief pause to respect rate limits
       await new Promise(r => setTimeout(r, 800));
-    } catch (e) {
+    } catch {
       console.log(`Failed to fetch polyline for ${act.activityId}`);
     }
   }
@@ -232,12 +240,14 @@ export async function testGarminConnection(
     const profile = await gc.getUserProfile();
     return {
       success: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       displayName: (profile as any)?.displayName ?? email,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     return {
       success: false,
-      error: err?.message ?? 'Connection failed. Check your credentials.',
+      error: error?.message ?? 'Connection failed. Check your credentials.',
     };
   }
 }

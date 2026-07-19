@@ -111,7 +111,9 @@ export default function ActivityMetricsChart({ data }: Props) {
           axisLine: { show: true, lineStyle: { color: '#8b5cf6' } }, // purple for cadence
           splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
           axisLabel: { color: '#94a3b8' },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           min: (val: any) => Math.max(0, Math.floor(val.min - 15)),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           max: (val: any) => Math.ceil(val.max + 15),
         },
         {
@@ -122,7 +124,9 @@ export default function ActivityMetricsChart({ data }: Props) {
           axisLine: { show: true, lineStyle: { color: '#10b981' } },
           splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
           axisLabel: { color: '#94a3b8', formatter: '{value}m' },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           min: (val: any) => Math.max(0, Math.floor(val.min - 30)),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           max: (val: any) => Math.ceil(val.max + 30),
         }
       ],

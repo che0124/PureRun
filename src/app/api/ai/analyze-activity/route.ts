@@ -35,10 +35,10 @@ export async function POST(req: Request) {
     const analysis = await analyzePostRun(geminiApiKey, activity);
 
     return NextResponse.json({ analysis });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[/api/ai/analyze-activity] Error:', error);
     return NextResponse.json(
-      { message: error.message || '無法生成分析報告' },
+      { message: error instanceof Error ? error.message : '無法生成分析報告' },
       { status: 500 }
     );
   }

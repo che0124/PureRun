@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const totalCount = await prisma.garminActivity.count();
 
     // 處理 BigInt 問題
-    const serializedActivities = activities.map((a: any) => ({
+    const serializedActivities = activities.map((a) => ({
       ...a,
       activityId: a.activityId.toString(), // 轉為字串避免 JSON error
     }));

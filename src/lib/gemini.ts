@@ -160,7 +160,9 @@ function buildContextPrompt(
   stats: RunnerStats,
   profile: RunnerProfile,
   startDate: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lastPlanWorkouts?: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   latestFitness?: any
 ): string {
   const { weeklyKm, avgHr, avgPaceStr, estimatedVdot, recentActivities } = stats;
@@ -247,7 +249,9 @@ export async function generateTrainingPlan(
   apiKey: string,
   stats: RunnerStats,
   profile: RunnerProfile,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lastPlanWorkouts?: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   latestFitness?: any
 ): Promise<TrainingPlanResponse> {
   if (apiKey.toLowerCase() === 'demo') {
@@ -261,6 +265,7 @@ export async function generateTrainingPlan(
     systemInstruction: buildSystemPrompt(profile),
     generationConfig: {
       responseMimeType: 'application/json',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       responseSchema: TRAINING_PLAN_SCHEMA as any,
       temperature: 0.4,
     },
@@ -288,7 +293,6 @@ export async function generateTrainingPlan(
 }
 
 export function generateMockPlan(profile: RunnerProfile): TrainingPlanResponse {
-  const daysCount = profile.planFrequency * 7;
   const plan: WorkoutDay[] = [];
   const baseDate = getMondayOfCurrentWeek();
 
@@ -336,6 +340,7 @@ export function generateMockPlan(profile: RunnerProfile): TrainingPlanResponse {
 
       // Get the actual weekday index of this date (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
       const dayOfWeek = currentDate.getDay();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const type = weekWorkouts[dayOfWeek] as any;
       
       let title = '輕鬆跑';
@@ -389,6 +394,7 @@ export function generateMockPlan(profile: RunnerProfile): TrainingPlanResponse {
 
 // ── Activity Post-Run Analysis ─────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function analyzePostRun(apiKey: string, activity: any): Promise<string> {
   if (apiKey.toLowerCase() === 'demo') {
     return '【Demo 模式】\n\n這是一場非常棒的訓練！從數據來看，您的配速十分穩定，心率控制得宜。這顯示您的有氧基礎正在穩步提升，請繼續保持這樣的訓練節奏，並記得在賽後補充足夠的水分與蛋白質！';

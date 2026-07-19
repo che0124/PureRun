@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 interface Props {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialGarminStats: any;
   initialPlan: {
     weeklyAnalysis: string;
@@ -74,6 +75,7 @@ export default function PlanClient({ initialGarminStats, initialPlan }: Props) {
 
   useEffect(() => {
     const creds = loadCredentials();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTargetDistance(creds.targetDistance || '42K');
     setTargetDateType(creds.targetDateType || 'weeks');
     setTargetDate(creds.targetDate || '');
@@ -161,7 +163,7 @@ export default function PlanClient({ initialGarminStats, initialPlan }: Props) {
       } else {
         setError(data.message || '計畫生成失敗。');
       }
-    } catch (err: any) {
+    } catch {
       setError('發生網路錯誤，請稍後再試。');
     } finally {
       setLoading(false);

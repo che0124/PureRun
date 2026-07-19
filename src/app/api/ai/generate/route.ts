@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       avgPaceStr: stats.avgPaceStr,
       estimatedVdot: stats.estimatedVdot,
       totalActivities: stats.totalActivities,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recentActivities: activities as any[],
     };
 
@@ -93,6 +94,7 @@ export async function POST(req: Request) {
           endDate: result.training_plan[result.training_plan.length - 1]?.date || new Date().toISOString().split('T')[0],
           weeklyAnalysis: result.weekly_analysis,
           workouts: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             create: result.training_plan.map((day: any) => ({
               date: day.date,
               workoutType: day.workout_type,
@@ -172,10 +174,11 @@ export async function POST(req: Request) {
       }))
     });
 
-  } catch (err: any) {
-    console.error('[/api/ai/generate] Error:', err?.message || err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error('[/api/ai/generate] Error:', errorMsg);
     return NextResponse.json(
-      { error: 'server_error', message: `計畫生成失敗：${err?.message || '未知伺服器錯誤'}` },
+      { error: 'server_error', message: `計畫生成失敗：${errorMsg || '未知伺服器錯誤'}` },
       { status: 500 }
     );
   }

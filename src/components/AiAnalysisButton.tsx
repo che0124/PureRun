@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { loadCredentials } from '@/lib/credentials';
-import { Brain, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Brain, Sparkles, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 interface Props {
@@ -40,8 +40,8 @@ export default function AiAnalysisButton({ activityId }: Props) {
       }
 
       setAnalysis(data.analysis);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

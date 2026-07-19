@@ -35,7 +35,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   let activityIdBigInt: bigint;
   try {
     activityIdBigInt = BigInt(id);
-  } catch (error) {
+  } catch {
     return notFound();
   }
 
@@ -56,9 +56,6 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   // --- Extract Real Time-Series Data for Charts ---
   let timeSeriesData: TimeSeriesDataPoint[] = [];
-  let paceData: number[] = [];
-  let hrData: number[] = [];
-  let cadenceData: number[] = [];
 
   if (activity.metricsData) {
     try {
@@ -66,8 +63,9 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
       // Subsample to max 300 points for performance
       const step = Math.ceil(metrics.length / 300);
-      const subsampled = metrics.filter((_: any, i: number) => i % step === 0);
+      const subsampled = metrics.filter((_: unknown, i: number) => i % step === 0);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       timeSeriesData = subsampled.map((m: any, i: number) => {
         // Try multiple common Garmin keys for altitude
         const el = m.elevation || m.altitude || m.enhancedAltitude || m.Elevation || m.Altitude || 0;
@@ -80,23 +78,22 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         };
       });
 
-      hrData = subsampled.map((m: any) => m.hr).filter((v: any) => v != null);
+      // HR data calculation removed since it is unused
     } catch (e) {
       console.error("Failed to parse metricsData", e);
     }
   }
 
   // Fallback if no detailed data (e.g. not synced yet)
-  const duration = Math.max(1, Math.round(activity.durationMin ?? 0));
   if (timeSeriesData.length === 0) {
     const baseHr = activity.avgHr || 145;
     const basePace = activity.avgPaceMinPerKm || 5.5;
     timeSeriesData = Array.from({ length: 60 }, (_, i) => ({
       time: `${i}m`,
-      hr: baseHr + (Math.random() * 10 - 5),
-      pace: basePace + (Math.random() * 0.5 - 0.25),
+      hr: baseHr + (i % 10) - 5,
+      pace: basePace + (i % 5) * 0.1 - 0.25,
       elevation: 0,
-      cadence: 165 + (Math.random() * 6 - 3)
+      cadence: 165 + (i % 6) - 3
     }));
   }
 

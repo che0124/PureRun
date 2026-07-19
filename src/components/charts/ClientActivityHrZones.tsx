@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { loadCredentials } from '@/lib/credentials';
 import { ZoneData } from './ZoneDistributionChart';
 
 interface Props {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activity: any;
 }
 
 export default function ClientActivityHrZones({ activity }: Props) {
-  const [hrZones, setHrZones] = useState<ZoneData[]>([]);
-
-  useEffect(() => {
+  const hrZones = useMemo(() => {
     let zones: ZoneData[] = [];
     
     // Legacy support if Garmin actually provided timeInZones
@@ -19,7 +18,7 @@ export default function ClientActivityHrZones({ activity }: Props) {
       try {
         const parsed = JSON.parse(activity.timeInZones);
         if (parsed.hrZones) zones = parsed.hrZones;
-      } catch (e) { }
+      } catch {}
     }
 
     // Calculate dynamically from metrics using user credentials
@@ -35,6 +34,7 @@ export default function ClientActivityHrZones({ activity }: Props) {
       if (activity.metricsData) {
         try {
           const metrics = JSON.parse(activity.metricsData);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           metrics.forEach((m: any) => {
             if (m.hr) {
               if (m.hr < z1Max) z1++;
@@ -44,7 +44,7 @@ export default function ClientActivityHrZones({ activity }: Props) {
               else z5++;
             }
           });
-        } catch(e) {}
+        } catch {}
       } else if (activity.avgHr) {
         // Basic fallback using avgHr entirely if no timeseries exists
         if (activity.avgHr < z1Max) z1 = 100;
@@ -75,7 +75,7 @@ export default function ClientActivityHrZones({ activity }: Props) {
       }
     }
     
-    setHrZones(zones);
+    return zones;
   }, [activity]);
 
   if (hrZones.length === 0) return null;

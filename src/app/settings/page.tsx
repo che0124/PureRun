@@ -36,6 +36,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const saved = loadCredentials();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGarminEmail(saved.garminEmail);
     setGarminPassword(saved.garminPassword);
     setGeminiApiKey(saved.geminiApiKey);
@@ -85,7 +86,7 @@ export default function SettingsPage() {
         setGarminStatus('error');
         setGarminMessage(data.error || '認證失敗。');
       }
-    } catch (err: any) {
+    } catch {
       setGarminStatus('error');
       setGarminMessage('網路錯誤或無法連線。');
     }

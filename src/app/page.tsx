@@ -4,29 +4,27 @@ import TodayWorkoutDashboard from '@/components/TodayWorkoutDashboard';
 import RecentActivitiesList from '@/components/RecentActivitiesList';
 import FitnessTrendChart from '@/components/charts/FitnessTrendChart';
 import ClientZoneChartWrapper from '@/components/charts/ClientZoneChartWrapper';
-import CircularProgress from '@/components/CircularProgress';
+
 import Link from 'next/link';
 import {
   Flame,
   Gauge,
-  Timer,
   Activity,
-  Navigation,
-  Heart,
   TrendingUp,
   Sparkles,
   Clock,
-  Brain,
-  ChevronRight,
-  ShieldAlert
+  ChevronRight
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic'; // Ensure it fetches fresh from DB
 
 export default async function DashboardPage() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const fs = require('fs/promises');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const path = require('path');
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let allActivitiesAsc: any[] = [];
   try {
     const dataDir = path.join(process.cwd(), 'data');
@@ -37,7 +35,7 @@ export default async function DashboardPage() {
       // activities.json 是從新到舊排列，反轉為從舊到新 (asc) 以符合後續圖表需求
       allActivitiesAsc = activities.reverse();
     }
-  } catch (err) {
+  } catch {
     // 若沒有 JSON 快取，可以 fall back 到 DB
     allActivitiesAsc = await prisma.garminActivity.findMany({
       orderBy: { date: 'asc' }
@@ -47,8 +45,6 @@ export default async function DashboardPage() {
   // 保留從 DB 讀取 stats 以顯示儀表板數據
   const stats = await prisma.garminStats.findUnique({ where: { id: 1 } });
   
-  // Display only the 1 most recent activity in the dashboard widget
-  const recentActivity = [...allActivitiesAsc].reverse().slice(0, 1);
   // Use last 10 activities for zone chart to show meaningful distribution
   const chartActivities = [...allActivitiesAsc].reverse().slice(0, 10);
 
@@ -60,6 +56,7 @@ export default async function DashboardPage() {
   // Map database Workout model to TodayWorkoutDashboard Workout interface
   const todayWorkoutPayload = todayWorkout ? {
     date: todayWorkout.date,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     workout_type: todayWorkout.workoutType as any,
     title: todayWorkout.title,
     target_pace: todayWorkout.targetPace || undefined,
@@ -68,7 +65,7 @@ export default async function DashboardPage() {
     status: todayWorkout.status
   } : null;
 
-  const totalZonePoints = 0; // Removed hardcoded calculation
+
 
   // Calculate real Fitness Trend (CTL/ATL/TSB) starting from the oldest activity to properly warm up the EMA
   const fitnessData = [];

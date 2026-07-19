@@ -98,6 +98,7 @@ export default function FitnessTrendChart({ data }: Props) {
           yAxisIndex: 1,
           itemStyle: {
             borderRadius: [4, 4, 0, 0],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             color: (params: any) => (params.value >= 0 ? '#10b981' : '#f59e0b'),
           },
           data: tsbData,

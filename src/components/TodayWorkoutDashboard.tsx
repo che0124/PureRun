@@ -3,7 +3,6 @@
 import React from 'react';
 import { 
   Flame, 
-  Activity, 
   Clock, 
   Heart, 
   Zap, 
@@ -30,9 +29,8 @@ interface DashboardProps {
   onStartRun?: () => void;
 }
 
-export default function TodayWorkoutDashboard({ 
-  workout, 
-  onStartRun 
+export default function TodayWorkoutDashboard({
+  workout
 }: DashboardProps) {
 
   const activeWorkout: Workout = workout || {

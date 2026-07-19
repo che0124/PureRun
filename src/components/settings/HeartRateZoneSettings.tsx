@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, RefreshCw, AlertCircle } from 'lucide-react';
 
 export type HRCalcMethod = 'hrr' | 'max_hr';
@@ -85,7 +85,9 @@ export default function HeartRateZoneSettings({
 
   // Run validation on mount and when zones/maxHr change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     validateZones(zones, maxHr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zones, maxHr]);
 
   const handleBpmChange = (index: number, val: string) => {

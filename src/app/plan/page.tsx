@@ -22,6 +22,7 @@ export default async function PlanPage() {
     avgPaceStr: stats.avgPaceStr,
     estimatedVdot: stats.estimatedVdot,
     totalActivities: stats.totalActivities,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recentActivities: activities.map((a: any) => ({
       activityId: Number(a.activityId),
       activityName: a.activityName,
@@ -46,6 +47,7 @@ export default async function PlanPage() {
     weeklyAnalysis: activePlan.weeklyAnalysis,
     workouts: activePlan.workouts.map(w => ({
       date: w.date,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       workout_type: w.workoutType as any,
       title: w.title,
       target_pace: w.targetPace || undefined,
@@ -64,7 +66,9 @@ export default async function PlanPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-8 animate-fade-up">
         <PlanClient 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           initialGarminStats={garminStatsPayload as any} 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           initialPlan={activePlanPayload as any}
         />
       </div>

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
+
   Target,
   Award,
   X,
@@ -95,7 +94,7 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
         className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-6 pt-2 px-2 scrollbar-hide -mx-4 sm:mx-0 sm:px-0"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {days.map((date, i) => {
+        {days.map((date) => {
           const dateStr = date.toISOString().split('T')[0];
           const isToday = dateStr === todayStr;
           const workout = workoutMap[dateStr];
