@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { getChartTheme } from '@/lib/chartTheme';
 
 export interface ZoneData {
   name: string; // e.g. "Z1 Recovery", "Z2 Aerobic"
@@ -16,16 +17,17 @@ interface Props {
 }
 
 export default function ZoneDistributionChart({ title, data, type = 'bar' }: Props) {
+  const theme = getChartTheme();
   const options = useMemo(() => {
     if (type === 'pie') {
       return {
-        tooltip: { trigger: 'item', backgroundColor: 'rgba(15, 23, 42, 0.9)', textStyle: { color: '#fff' } },
+        tooltip: { trigger: 'item', backgroundColor: theme.tooltipBg, textStyle: { color: theme.tooltipText } },
         legend: { 
           bottom: '0%', 
           left: 'center', 
           itemWidth: 10, 
           itemHeight: 10, 
-          textStyle: { color: '#94a3b8', fontSize: 10 } 
+          textStyle: { color: theme.subtextColor, fontSize: 10 } 
         },
         series: [
           {
@@ -36,12 +38,12 @@ export default function ZoneDistributionChart({ title, data, type = 'bar' }: Pro
             avoidLabelOverlap: false,
             itemStyle: {
               borderRadius: 10,
-              borderColor: '#0f172a',
+              borderColor: theme.backgroundColor,
               borderWidth: 2,
             },
             label: { show: false, position: 'center' },
             emphasis: {
-              label: { show: true, fontSize: '18', fontWeight: 'bold', color: '#fff' },
+              label: { show: true, fontSize: '18', fontWeight: 'bold', color: theme.tooltipText },
             },
             labelLine: { show: false },
             data: data.map(d => ({ value: d.value, name: d.name, itemStyle: { color: d.color } })),
@@ -50,13 +52,12 @@ export default function ZoneDistributionChart({ title, data, type = 'bar' }: Pro
       };
     }
 
-    // Bar chart (Stacked horizontal)
     return {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        textStyle: { color: '#fff' },
+        backgroundColor: theme.tooltipBg,
+        textStyle: { color: theme.tooltipText },
       },
       legend: { show: false },
       grid: { left: '3%', right: '4%', bottom: '3%', top: '3%', containLabel: true },
@@ -66,20 +67,19 @@ export default function ZoneDistributionChart({ title, data, type = 'bar' }: Pro
         name: d.name,
         type: 'bar',
         stack: 'total',
-        label: { show: true, formatter: '{a}', color: '#fff', fontSize: 10 },
+        label: { show: true, formatter: '{a}', color: theme.tooltipText, fontSize: 10 },
         emphasis: { focus: 'series' },
         itemStyle: { color: d.color, borderRadius: 4 },
         data: [d.value],
       })),
     };
-  }, [data, title, type]);
+  }, [data, title, type, theme]);
 
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-xl w-full">
-      <h3 className="mb-4 text-sm font-medium text-slate-400 uppercase tracking-wider">{title}</h3>
-      <ReactECharts option={options} style={{ height: type === 'pie' ? '300px' : '80px', width: '100%' }} />
+    <div className="rounded-[1.5rem] p-4 md:p-6 w-full h-full flex flex-col justify-center">
+      <ReactECharts option={options} style={{ height: '100%', width: '100%', minHeight: '200px' }} />
     </div>
   );
 }

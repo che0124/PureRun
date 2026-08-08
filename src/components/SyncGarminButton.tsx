@@ -58,13 +58,13 @@ export default function SyncGarminButton() {
       case 'syncing':
         return 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse cursor-wait';
       case 'success':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+        return 'bg-emerald-500/20 text-[var(--text-accent)] border-emerald-500/40';
       case 'no_creds':
       case 'timeout':
       case 'error':
         return 'bg-rose-500/15 text-rose-400 border-rose-500/35';
       default:
-        return 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:border-emerald-500/50 cursor-pointer';
+        return 'bg-emerald-500/10 hover:bg-emerald-500/20 text-[var(--text-accent)] border-emerald-500/30 hover:border-emerald-500/50 cursor-pointer';
     }
   };
 

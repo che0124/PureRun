@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { getChartTheme } from '@/lib/chartTheme';
 
 export interface FitnessDataPoint {
   date: string;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function FitnessTrendChart({ data }: Props) {
+  const theme = getChartTheme();
   const options = useMemo(() => {
     const dates = data.map((d) => d.date);
     const ctlData = data.map((d) => d.ctl);
@@ -24,14 +26,14 @@ export default function FitnessTrendChart({ data }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        borderColor: '#334155',
-        textStyle: { color: '#f8fafc' },
-        axisPointer: { type: 'cross', label: { backgroundColor: '#334155' } },
+        backgroundColor: theme.tooltipBg,
+        borderColor: theme.gridLineColor,
+        textStyle: { color: theme.tooltipText },
+        axisPointer: { type: 'cross', label: { backgroundColor: theme.tooltipBg } },
       },
       legend: {
         data: ['長期體能 (CTL)', '短期疲勞 (ATL)', '訓練狀態 (TSB)'],
-        textStyle: { color: '#94a3b8' },
+        textStyle: { color: theme.subtextColor },
         top: 0,
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -40,8 +42,8 @@ export default function FitnessTrendChart({ data }: Props) {
           type: 'category',
           boundaryGap: false,
           data: dates,
-          axisLine: { lineStyle: { color: '#475569' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: theme.axisLineColor } },
+          axisLabel: { color: theme.subtextColor },
         },
       ],
       yAxis: [
@@ -49,9 +51,9 @@ export default function FitnessTrendChart({ data }: Props) {
           type: 'value',
           name: '訓練負荷 (Load)',
           position: 'left',
-          axisLine: { show: true, lineStyle: { color: '#475569' } },
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { show: true, lineStyle: { color: theme.axisLineColor } },
+          splitLine: { lineStyle: { color: theme.gridLineColor, type: 'dashed' } },
+          axisLabel: { color: theme.subtextColor },
         },
         {
           type: 'value',
@@ -59,7 +61,7 @@ export default function FitnessTrendChart({ data }: Props) {
           position: 'right',
           axisLine: { show: false },
           splitLine: { show: false },
-          axisLabel: { color: '#94a3b8' },
+          axisLabel: { color: theme.subtextColor },
         },
       ],
       series: [
@@ -105,20 +107,20 @@ export default function FitnessTrendChart({ data }: Props) {
         },
       ],
     };
-  }, [data]);
+  }, [data, theme]);
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl bg-slate-900 border border-slate-800">
-        <p className="text-slate-400">目前尚無體能數據</p>
+      <div className="flex h-64 items-center justify-center rounded-xl bg-surface border border-border">
+        <p className="text-[var(--text-secondary)]">目前尚無體能數據</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-xl w-full">
-      <h3 className="mb-4 text-lg font-semibold text-white">訓練負荷與體能趨勢</h3>
-      <ReactECharts option={options} style={{ height: '350px', width: '100%' }} />
+    <div className="rounded-[1.5rem] p-6 w-full h-full flex flex-col justify-center min-h-[200px]">
+      <h3 className="mb-4 text-lg font-bold text-[var(--text-primary)] tracking-wide">訓練負荷與體能趨勢</h3>
+      <ReactECharts option={options} style={{ height: '100%', width: '100%', minHeight: '200px' }} />
     </div>
   );
 }

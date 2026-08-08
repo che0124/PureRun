@@ -22,7 +22,7 @@ import {
 import RealMapWrapper from '@/components/RealMapWrapper';
 import ActivityMetricsChart, { TimeSeriesDataPoint } from '@/components/charts/ActivityMetricsChart';
 import ClientActivityHrZones from '@/components/charts/ClientActivityHrZones';
-import AiAnalysisButton from '@/components/AiAnalysisButton';
+
 import CircularProgress from '@/components/CircularProgress';
 
 interface PageProps {
@@ -102,40 +102,40 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   // We delegate this to the ClientActivityHrZones component.
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-50 pb-20">
+    <div className="min-h-screen bg-background text-[var(--text-primary)] font-sans selection:bg-emerald-500/30 selection:text-emerald-50">
 
       {/* Header Navigation */}
-      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/60">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/60">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors group"
+            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-accent)] transition-colors group"
           >
-            <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
+            <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </div>
             <span className="font-sans font-bold text-sm tracking-wider uppercase">返回主控台</span>
           </Link>
-          <div className="text-[10px] px-2.5 py-1 rounded bg-slate-900 text-slate-400 border border-slate-800 uppercase tracking-widest font-mono">
+          <div className="text-[10px] px-2.5 py-1 rounded bg-surface text-[var(--text-secondary)] border border-border uppercase tracking-widest font-mono">
             ID: {activity.activityId.toString()}
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-10 animate-fade-up">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-10">
 
         {/* Title Section */}
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[var(--text-accent)]">
             {isRun ? <Route className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
             <span className="text-xs font-bold uppercase tracking-wider">
               {isRun ? '跑步紀錄' : '運動紀錄'}
             </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-slate-50 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
             {activity.activityName}
           </h1>
-          <div className="flex items-center gap-2 text-slate-400 font-mono text-sm">
+          <div className="flex items-center gap-2 text-[var(--text-secondary)] font-mono text-sm">
             <Calendar className="w-4 h-4" />
             {new Date(activity.date).toLocaleString('zh-TW')}
           </div>
@@ -145,56 +145,56 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         <RealMapWrapper routeData={activity.routeData as string} />
 
         {/* Primary Core Stats (Hero) */}
-        <div className="bg-slate-900/40 backdrop-blur-lg border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+        <div className="bg-surface/40 backdrop-blur-lg border border-border/80 rounded-3xl p-6 md:p-8 shadow-2xl">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-border">
 
             <div className="flex flex-col items-center justify-center space-y-2 pt-4 md:pt-0">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                 <Route className="w-3.5 h-3.5 text-emerald-500/50" /> 總距離
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.distanceKm}</span>
-                <span className="text-sm text-emerald-400 font-sans font-bold">公里</span>
+                <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.distanceKm}</span>
+                <span className="text-sm text-[var(--text-accent)] font-sans font-bold">公里</span>
               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-2 pt-6 md:pt-0">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-emerald-500/50" /> 持續時間
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.durationMin}</span>
-                <span className="text-sm text-emerald-400 font-sans font-bold">分鐘</span>
+                <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.durationMin}</span>
+                <span className="text-sm text-[var(--text-accent)] font-sans font-bold">分鐘</span>
               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-2 pt-6 md:pt-0 col-span-2 md:col-span-1">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                 <Timer className="w-3.5 h-3.5 text-emerald-500/50" /> 平均配速
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.avgPaceStr ?? '--'}</span>
-                <span className="text-sm text-emerald-400 font-sans font-bold">/km</span>
+                <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.avgPaceStr ?? '--'}</span>
+                <span className="text-sm text-[var(--text-accent)] font-sans font-bold">/km</span>
               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-2 pt-6 md:pt-0">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-500/50" /> 總爬升
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.elevationGain ? Math.round(activity.elevationGain) : '--'}</span>
-                <span className="text-sm text-emerald-400 font-sans font-bold">m</span>
+                <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.elevationGain ? Math.round(activity.elevationGain) : '--'}</span>
+                <span className="text-sm text-[var(--text-accent)] font-sans font-bold">m</span>
               </div>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-2 pt-6 md:pt-0">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-emerald-500/50" /> 消耗熱量
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.calories ?? '--'}</span>
-                <span className="text-sm text-emerald-400 font-sans font-bold">kcal</span>
+                <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.calories ?? '--'}</span>
+                <span className="text-sm text-[var(--text-accent)] font-sans font-bold">kcal</span>
               </div>
             </div>
 
@@ -203,28 +203,28 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* Target vs Actual Comparison (If linked to a Workout) */}
         {workout && (
-          <div className="bg-slate-900/60 backdrop-blur-lg border border-emerald-500/30 rounded-3xl p-6 md:p-8 shadow-[0_0_30px_rgba(16,185,129,0.05)] relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+          <div className="bg-surface/60 backdrop-blur-lg border border-emerald-500/30 rounded-3xl p-6 md:p-8 shadow-[0_0_30px_rgba(16,185,129,0.05)] relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex-1 space-y-4 w-full">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-[var(--text-accent)] border border-emerald-500/20">
                 <Target className="w-4 h-4" />
                 <span className="text-xs font-bold uppercase tracking-wider">AI 課表執行分析</span>
               </div>
-              <h2 className="text-2xl font-bold text-slate-50">{workout.title}</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">{workout.title}</h2>
 
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">配速表現 (預期 vs 實際)</span>
+                <div className="bg-background/50 p-4 rounded-2xl border border-border">
+                  <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest block mb-1">配速表現 (預期 vs 實際)</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-mono font-bold text-slate-400 line-through decoration-slate-600">{workout.targetPace || '--'}</span>
-                    <span className="text-2xl font-mono font-extrabold text-emerald-400">{activity.avgPaceStr}</span>
+                    <span className="text-lg font-mono font-bold text-[var(--text-secondary)] line-through decoration-[var(--text-muted)]">{workout.targetPace || '--'}</span>
+                    <span className="text-2xl font-mono font-extrabold text-[var(--text-accent)]">{activity.avgPaceStr}</span>
                   </div>
                 </div>
-                <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">心率區間 (預期 vs 實際)</span>
+                <div className="bg-background/50 p-4 rounded-2xl border border-border">
+                  <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest block mb-1">心率區間 (預期 vs 實際)</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-mono font-bold text-slate-400 line-through decoration-slate-600">Z{workout.targetHrZone || '-'}</span>
+                    <span className="text-lg font-mono font-bold text-[var(--text-secondary)] line-through decoration-[var(--text-muted)]">Z{workout.targetHrZone || '-'}</span>
                     <span className="text-2xl font-mono font-extrabold text-rose-400">{activity.avgHr} bpm</span>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
                   size={140}
                   strokeWidth={12}
                   label="課表達成率"
-                  color={workout.complianceRate >= 90 ? "text-emerald-400" : workout.complianceRate >= 70 ? "text-amber-400" : "text-rose-400"}
+                  color={workout.complianceRate >= 90 ? "text-[var(--text-accent)]" : workout.complianceRate >= 70 ? "text-amber-400" : "text-rose-400"}
                 />
               </div>
             )}
@@ -247,42 +247,42 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         )}
 
         {/* AI Post-Run Analysis */}
-        <AiAnalysisButton activityId={activity.activityId.toString()} />
+
 
         {/* Detailed Metrics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
 
           {/* Heart Rate & Effort */}
-          <div className="bg-slate-900/20 border border-slate-800/50 rounded-2xl p-6 md:p-8 space-y-8 flex flex-col">
-            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-4">
+          <div className="bg-surface/20 border border-border/50 rounded-2xl p-6 md:p-8 space-y-8 flex flex-col">
+            <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2 border-b border-border pb-4">
               <Heart className="w-5 h-5 text-rose-400" /> 心肺與負荷
             </h2>
 
             <div className="grid grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">平均心率</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">平均心率</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.avgHr ?? '--'}</span>
-                  <span className="text-sm font-sans font-bold text-slate-500">bpm</span>
+                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.avgHr ?? '--'}</span>
+                  <span className="text-sm font-sans font-bold text-[var(--text-muted)]">bpm</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">最高心率</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">最高心率</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.maxHr ?? '--'}</span>
-                  <span className="text-sm font-sans font-bold text-slate-500">bpm</span>
+                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.maxHr ?? '--'}</span>
+                  <span className="text-sm font-sans font-bold text-[var(--text-muted)]">bpm</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
                   <Gauge className="w-3.5 h-3.5" /> 最大攝氧量
                 </span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-emerald-400">{activity.vO2MaxValue ?? '--'}</span>
+                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-accent)]">{activity.vO2MaxValue ?? '--'}</span>
                 </div>
               </div>
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5" /> 訓練壓力(TSS)
                 </span>
                 <div className="flex items-baseline gap-1">
@@ -297,41 +297,41 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           </div>
 
           {/* Running Dynamics */}
-          <div className="bg-slate-900/20 border border-slate-800/50 rounded-2xl p-6 md:p-8 space-y-8 flex flex-col">
-            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-slate-800 pb-4">
+          <div className="bg-surface/20 border border-border/50 rounded-2xl p-6 md:p-8 space-y-8 flex flex-col">
+            <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2 border-b border-border pb-4">
               <Footprints className="w-5 h-5 text-amber-400" /> 跑步動態與環境
             </h2>
 
             <div className="grid grid-cols-2 gap-6 md:gap-8">
               <div className={`space-y-2 ${!activity.cadence ? 'opacity-40 grayscale' : ''} transition-opacity`}>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">平均步頻</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">平均步頻</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.cadence ?? '--'}</span>
-                  <span className="text-sm font-sans font-bold text-slate-500">spm</span>
+                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.cadence ?? '--'}</span>
+                  <span className="text-sm font-sans font-bold text-[var(--text-muted)]">spm</span>
                 </div>
               </div>
               <div className={`space-y-2 ${!activity.strideLength ? 'opacity-40 grayscale' : ''} transition-opacity`}>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">平均步幅</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">平均步幅</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.strideLength ? `${(activity.strideLength / 100).toFixed(2)}` : '--'}</span>
-                  <span className="text-sm font-sans font-bold text-slate-500">公尺</span>
+                  <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.strideLength ? `${(activity.strideLength / 100).toFixed(2)}` : '--'}</span>
+                  <span className="text-sm font-sans font-bold text-[var(--text-muted)]">公尺</span>
                 </div>
               </div>
               {activity.groundContactTime != null && (
                 <div className="space-y-2 transition-opacity">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">觸地時間 (GCT)</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">觸地時間 (GCT)</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.groundContactTime}</span>
-                    <span className="text-sm font-sans font-bold text-slate-500">ms</span>
+                    <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.groundContactTime}</span>
+                    <span className="text-sm font-sans font-bold text-[var(--text-muted)]">ms</span>
                   </div>
                 </div>
               )}
               {activity.verticalOscillation != null && (
                 <div className="space-y-2 transition-opacity">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">垂直振幅 (VO)</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">垂直振幅 (VO)</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl md:text-5xl font-mono font-extrabold text-slate-100">{activity.verticalOscillation}</span>
-                    <span className="text-sm font-sans font-bold text-slate-500">cm</span>
+                    <span className="text-4xl md:text-5xl font-mono font-extrabold text-[var(--text-primary)]">{activity.verticalOscillation}</span>
+                    <span className="text-sm font-sans font-bold text-[var(--text-muted)]">cm</span>
                   </div>
                 </div>
               )}

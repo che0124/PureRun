@@ -21,6 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   display: "swap",
 });
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const viewport: Viewport = {
   themeColor: "#020617",
@@ -47,11 +48,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased selection:bg-emerald-500/30 selection:text-emerald-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 bg-background text-slate-100">
-        <Navbar />
-        {children}
-        <MobileBottomNav />
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <body className="antialiased selection:bg-emerald-500/30 selection:text-emerald-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 bg-background">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Navbar />
+          {children}
+          <MobileBottomNav />
+        </ThemeProvider>
       </body>
     </html>
   );

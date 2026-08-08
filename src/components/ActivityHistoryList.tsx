@@ -92,7 +92,7 @@ export default function ActivityHistoryList({ initialActivities = [] }: { initia
 
       {!hasMore && activities.length > 0 && (
         <div className="w-full text-center py-8">
-          <span className="font-mono text-xs text-slate-600 tracking-widest uppercase">
+          <span className="font-mono text-xs text-[var(--text-muted)] tracking-widest uppercase">
             已載入全部活動紀錄
           </span>
         </div>

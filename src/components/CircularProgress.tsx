@@ -7,8 +7,8 @@ interface CircularProgressProps {
   strokeWidth?: number;
   label?: string;
   sublabel?: string;
-  color?: string; // e.g. "text-emerald-400"
-  trackColor?: string; // e.g. "text-slate-800"
+  color?: string; // e.g. "text-[var(--text-accent)]"
+  trackColor?: string; // e.g. "text-border"
 }
 
 export default function CircularProgress({
@@ -18,8 +18,8 @@ export default function CircularProgress({
   strokeWidth = 10,
   label,
   sublabel,
-  color = "text-emerald-400",
-  trackColor = "text-slate-800"
+  color = "text-[var(--text-accent)]",
+  trackColor = "text-border"
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -60,11 +60,11 @@ export default function CircularProgress({
       </svg>
       {/* Center Text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-xl font-extrabold font-mono text-slate-50 tracking-tighter">
+        <span className="text-xl font-extrabold font-mono text-[var(--text-primary)] tracking-tighter">
           {Math.round(percentage)}%
         </span>
-        {label && <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{label}</span>}
-        {sublabel && <span className="text-[8px] text-slate-500 mt-0.5">{sublabel}</span>}
+        {label && <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mt-0.5">{label}</span>}
+        {sublabel && <span className="text-[8px] text-[var(--text-muted)] mt-0.5">{sublabel}</span>}
       </div>
     </div>
   );

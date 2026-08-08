@@ -1,76 +1,34 @@
 import React from 'react';
+import ScienceEngine from '@/components/ScienceEngine';
 import { prisma } from '@/lib/db';
-import PlanClient from './PlanClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlanPage() {
-  const stats = await prisma.garminStats.findUnique({ where: { id: 1 } });
-  const activities = await prisma.garminActivity.findMany({ 
-    orderBy: { date: 'desc' },
-    take: 10
-  });
+  let realVdot = 45;
+  let realCtl = 40;
+  let hasRealData = false;
 
-  const activePlan = await prisma.trainingPlan.findFirst({
-    orderBy: { createdAt: 'desc' },
-    include: { workouts: true }
-  });
+  try {
+    const stats = await prisma.garminStats.findFirst({
+      orderBy: { updatedAt: 'desc' }
+    });
+    const fitness = await prisma.fitnessStatus.findFirst({
+      orderBy: { createdAt: 'desc' }
+    });
 
-  const garminStatsPayload = stats ? {
-    weeklyKm: stats.weeklyKm,
-    avgHr: stats.avgHr,
-    avgPaceStr: stats.avgPaceStr,
-    estimatedVdot: stats.estimatedVdot,
-    totalActivities: stats.totalActivities,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recentActivities: activities.map((a: any) => ({
-      activityId: Number(a.activityId),
-      activityName: a.activityName,
-      date: a.date,
-      distanceKm: a.distanceKm,
-      durationMin: a.durationMin,
-      avgHr: a.avgHr,
-      maxHr: a.maxHr,
-      avgPaceMinPerKm: a.avgPaceMinPerKm,
-      avgPaceStr: a.avgPaceStr,
-      vO2MaxValue: a.vO2MaxValue,
-      calories: a.calories,
-      activityTypeKey: a.activityTypeKey,
-      elevationGain: a.elevationGain,
-      cadence: a.cadence,
-      strideLength: a.strideLength,
-      trainingEffect: a.trainingEffect,
-    }))
-  } : null;
-
-  const activePlanPayload = activePlan ? {
-    weeklyAnalysis: activePlan.weeklyAnalysis,
-    workouts: activePlan.workouts.map(w => ({
-      date: w.date,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      workout_type: w.workoutType as any,
-      title: w.title,
-      target_pace: w.targetPace || undefined,
-      target_hr_zone: w.targetHrZone || undefined,
-      description: w.description || undefined,
-      status: w.status,
-      actual_distance: w.actualDistance || undefined,
-      actual_duration: w.actualDuration || undefined,
-      actual_avg_hr: w.actualAvgHr || undefined,
-      actual_pace_str: w.actualPaceStr || undefined,
-      compliance_rate: w.complianceRate || undefined,
-    }))
-  } : null;
+    if (stats?.estimatedVdot) realVdot = stats.estimatedVdot;
+    if (fitness?.ctl) realCtl = fitness.ctl;
+    hasRealData = !!stats || !!fitness;
+  } catch (error) {
+    console.error("Failed to connect to database in PlanPage:", error);
+    // Fallback to defaults and simulation mode if DB is unreachable
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-8 animate-fade-up">
-        <PlanClient 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          initialGarminStats={garminStatsPayload as any} 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          initialPlan={activePlanPayload as any}
-        />
+    <div className="min-h-screen bg-background relative text-[var(--text-primary)] font-sans selection:bg-emerald-500/30 selection:text-emerald-50 overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 md:pt-4 md:pb-12">
+        <ScienceEngine initialVdot={realVdot} initialCtl={realCtl} hasRealData={hasRealData} />
       </div>
     </div>
   );

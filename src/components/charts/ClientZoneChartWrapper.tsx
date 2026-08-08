@@ -51,13 +51,7 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
       { name: `Z3 節奏 (${z2Max}-${z3Max - 1})`, value: Number(((z3 / totalZonePoints) * 100).toFixed(1)), color: '#10b981' },
       { name: `Z4 乳酸 (${z3Max}-${z4Max - 1})`, value: Number(((z4 / totalZonePoints) * 100).toFixed(1)), color: '#f59e0b' },
       { name: `Z5 無氧 (>${z4Max - 1})`, value: Number(((z5 / totalZonePoints) * 100).toFixed(1)), color: '#ef4444' },
-    ] : [
-      { name: `Z1 恢復`, value: 15, color: '#94a3b8' },
-      { name: `Z2 有氧`, value: 45, color: '#3b82f6' },
-      { name: `Z3 節奏`, value: 25, color: '#10b981' },
-      { name: `Z4 乳酸`, value: 10, color: '#f59e0b' },
-      { name: `Z5 無氧`, value: 5, color: '#ef4444' },
-    ];
+    ] : [];
   }, [activities]);
 
   if (zones.length === 0) return null;

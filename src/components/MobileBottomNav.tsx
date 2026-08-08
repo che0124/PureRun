@@ -10,7 +10,7 @@ export default function MobileBottomNav() {
 
   const navItems = [
     { name: '首頁', path: '/', icon: LayoutDashboard },
-    { name: 'AI課表', path: '/plan', icon: Zap },
+    { name: '訓練計畫', path: '/plan', icon: Zap },
     { name: '紀錄', path: '/activity', icon: Activity },
     { name: '設定', path: '/settings', icon: Settings }
   ];
@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
             <Link 
               key={item.path} 
               href={item.path}
-              className={`flex flex-col items-center justify-center w-16 h-full gap-1 transition-all duration-300 relative ${isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex flex-col items-center justify-center w-16 h-full gap-1 transition-all duration-300 relative ${isActive ? 'text-[var(--text-accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
             >
               {isActive && (
                 <div className="absolute top-0 w-8 h-[2px] bg-emerald-400 rounded-b-md shadow-[0_0_8px_rgba(52,211,153,0.8)]" />

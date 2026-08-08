@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { getChartTheme } from '@/lib/chartTheme';
 
 export interface TimeSeriesDataPoint {
   time: string; // or distance
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function ActivityMetricsChart({ data }: Props) {
+  const theme = getChartTheme();
   const options = useMemo(() => {
     const xAxisData = data.map(d => d.time);
     const hrData = data.map(d => d.hr);
@@ -26,14 +28,14 @@ export default function ActivityMetricsChart({ data }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        textStyle: { color: '#fff' },
-        axisPointer: { type: 'cross', label: { backgroundColor: '#334155' } },
+        backgroundColor: theme.tooltipBg,
+        textStyle: { color: theme.tooltipText },
+        axisPointer: { type: 'cross', label: { backgroundColor: theme.tooltipBg } },
       },
       legend: {
         data: ['Pace', 'Heart Rate', 'Cadence', 'Elevation'],
         top: 0,
-        textStyle: { color: '#94a3b8' },
+        textStyle: { color: theme.subtextColor },
       },
       axisPointer: {
         link: [{ xAxisIndex: 'all' }],
@@ -49,29 +51,29 @@ export default function ActivityMetricsChart({ data }: Props) {
           type: 'category',
           data: xAxisData,
           gridIndex: 0,
-          axisLine: { lineStyle: { color: '#475569' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: theme.axisLineColor } },
+          axisLabel: { color: theme.subtextColor },
         },
         {
           type: 'category',
           data: xAxisData,
           gridIndex: 1,
-          axisLine: { lineStyle: { color: '#475569' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: theme.axisLineColor } },
+          axisLabel: { color: theme.subtextColor },
         },
         {
           type: 'category',
           data: xAxisData,
           gridIndex: 2,
-          axisLine: { lineStyle: { color: '#475569' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: theme.axisLineColor } },
+          axisLabel: { color: theme.subtextColor },
         },
         {
           type: 'category',
           data: xAxisData,
           gridIndex: 3,
-          axisLine: { lineStyle: { color: '#475569' } },
-          axisLabel: { color: '#94a3b8' },
+          axisLine: { lineStyle: { color: theme.axisLineColor } },
+          axisLabel: { color: theme.subtextColor },
         }
       ],
       yAxis: [
@@ -83,9 +85,9 @@ export default function ActivityMetricsChart({ data }: Props) {
           position: 'left',
           inverse: true,
           axisLine: { show: true, lineStyle: { color: '#3b82f6' } },
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
+          splitLine: { lineStyle: { color: theme.gridLineColor, type: 'dashed' } },
           axisLabel: {
-            color: '#94a3b8',
+            color: theme.subtextColor,
             formatter: (val: number) => {
               const mins = Math.floor(val);
               const secs = Math.floor((val - mins) * 60);
@@ -99,8 +101,8 @@ export default function ActivityMetricsChart({ data }: Props) {
           gridIndex: 1,
           position: 'left',
           axisLine: { show: true, lineStyle: { color: '#ef4444' } },
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
-          axisLabel: { color: '#94a3b8' },
+          splitLine: { lineStyle: { color: theme.gridLineColor, type: 'dashed' } },
+          axisLabel: { color: theme.subtextColor },
           min: 'dataMin',
         },
         {
@@ -109,8 +111,8 @@ export default function ActivityMetricsChart({ data }: Props) {
           gridIndex: 2,
           position: 'left',
           axisLine: { show: true, lineStyle: { color: '#8b5cf6' } }, // purple for cadence
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
-          axisLabel: { color: '#94a3b8' },
+          splitLine: { lineStyle: { color: theme.gridLineColor, type: 'dashed' } },
+          axisLabel: { color: theme.subtextColor },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           min: (val: any) => Math.max(0, Math.floor(val.min - 15)),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,8 +124,8 @@ export default function ActivityMetricsChart({ data }: Props) {
           gridIndex: 3,
           position: 'left', // Keep all axes on the left for uniform alignment
           axisLine: { show: true, lineStyle: { color: '#10b981' } },
-          splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
-          axisLabel: { color: '#94a3b8', formatter: '{value}m' },
+          splitLine: { lineStyle: { color: theme.gridLineColor, type: 'dashed' } },
+          axisLabel: { color: theme.subtextColor, formatter: '{value}m' },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           min: (val: any) => Math.max(0, Math.floor(val.min - 30)),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,12 +177,12 @@ export default function ActivityMetricsChart({ data }: Props) {
         },
       ],
     };
-  }, [data]);
+  }, [data, theme]);
 
   if (!data || data.length === 0) return null;
 
     return (
-      <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 shadow-xl w-full">
+      <div className="rounded-2xl bg-surface p-6 border border-border shadow-xl w-full">
         <ReactECharts option={options} style={{ height: '1000px', width: '100%' }} />
       </div>
     );

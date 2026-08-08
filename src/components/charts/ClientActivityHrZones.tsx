@@ -81,19 +81,19 @@ export default function ClientActivityHrZones({ activity }: Props) {
   if (hrZones.length === 0) return null;
 
   return (
-    <div className="mt-4 flex-grow border-t border-slate-800/50 pt-6 space-y-4">
-      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">心率區間分佈</h3>
+    <div className="mt-4 flex-grow border-t border-border pt-6 space-y-4">
+      <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">心率區間分佈</h3>
       <div className="space-y-3">
         {hrZones.map(zone => (
           <div key={zone.name} className="flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400 w-24 shrink-0 truncate" title={zone.name}>{zone.name}</span>
-            <div className="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+            <span className="text-xs font-medium text-[var(--text-secondary)] w-24 shrink-0 truncate" title={zone.name}>{zone.name}</span>
+            <div className="flex-1 h-2 bg-background rounded-full overflow-hidden border border-border">
               <div 
                 className="h-full rounded-full transition-all duration-1000 ease-out" 
                 style={{ width: `${zone.value}%`, backgroundColor: zone.color }}
               ></div>
             </div>
-            <span className="text-xs font-mono font-bold text-slate-300 w-12 text-right">{zone.value}%</span>
+            <span className="text-xs font-mono font-bold text-[var(--text-secondary)] w-12 text-right">{zone.value}%</span>
           </div>
         ))}
       </div>
