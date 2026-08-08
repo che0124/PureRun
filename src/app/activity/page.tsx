@@ -1,5 +1,6 @@
 import React from 'react';
 import { prisma } from '@/lib/db';
+import { getDeviceId } from '@/lib/device';
 import ActivityHistoryList from '@/components/ActivityHistoryList';
 import { Activity } from 'lucide-react';
 
@@ -7,12 +8,16 @@ export const dynamic = 'force-dynamic';
 
 export default async function ActivityPage() {
   // 為了效能，Server Component 初始只載入前 10 筆資料
+  const deviceId = await getDeviceId();
   const initialActivities = await prisma.garminActivity.findMany({
+    where: { deviceId },
     take: 10,
     orderBy: { date: 'desc' }
   });
 
-  const totalCount = await prisma.garminActivity.count();
+  const totalCount = await prisma.garminActivity.count({
+    where: { deviceId }
+  });
 
   const activitiesPayload = initialActivities.map(a => ({
     ...a,

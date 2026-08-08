@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getDeviceId } from '@/lib/device';
 
 export async function GET(req: Request) {
   try {
@@ -10,13 +11,17 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
     const take = limit;
 
+    const deviceId = await getDeviceId();
     const activities = await prisma.garminActivity.findMany({
+      where: { deviceId },
       skip,
       take,
       orderBy: { date: 'desc' },
     });
 
-    const totalCount = await prisma.garminActivity.count();
+    const totalCount = await prisma.garminActivity.count({
+      where: { deviceId }
+    });
 
     // 處理 BigInt 問題
     const serializedActivities = activities.map((a) => ({

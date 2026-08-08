@@ -1,5 +1,6 @@
 import React from 'react';
 import { prisma } from '@/lib/db';
+import { getDeviceId } from '@/lib/device';
 import FitnessTrendChart from '@/components/charts/FitnessTrendChart';
 import ClientZoneChartWrapper from '@/components/charts/ClientZoneChartWrapper';
 import ActivityCalendar from '@/components/ActivityCalendar';
@@ -16,7 +17,9 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
+  const deviceId = await getDeviceId();
   const allActivitiesAsc = await prisma.garminActivity.findMany({
+    where: { deviceId },
     select: {
       activityId: true,
       date: true,
@@ -28,7 +31,7 @@ export default async function DashboardPage() {
     orderBy: { date: 'asc' }
   });
 
-  const stats = await prisma.garminStats.findUnique({ where: { id: 1 } });
+  const stats = await prisma.garminStats.findUnique({ where: { deviceId } });
   
   const fitnessData = [];
   let currentCtl = 0; 

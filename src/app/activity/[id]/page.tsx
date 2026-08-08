@@ -1,5 +1,6 @@
 import React from 'react';
 import { prisma } from '@/lib/db';
+import { getDeviceId } from '@/lib/device';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,16 +32,15 @@ interface PageProps {
 
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
-
-  let activityIdBigInt: bigint;
-  try {
-    activityIdBigInt = BigInt(id);
-  } catch {
-    return notFound();
-  }
+  const deviceId = await getDeviceId();
 
   const activity = await prisma.garminActivity.findUnique({
-    where: { activityId: activityIdBigInt }
+    where: { 
+      deviceId_activityId: {
+        deviceId,
+        activityId: BigInt(id)
+      }
+    }
   });
 
   if (!activity) {
@@ -49,7 +49,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   // Fetch corresponding workout to show Target vs Actual
   const workout = await prisma.workout.findFirst({
-    where: { actualActivityId: activityIdBigInt }
+    where: { 
+      plan: { deviceId },
+      actualActivityId: activity.activityId 
+    }
   });
 
   const isRun = activity.activityTypeKey === 'running';

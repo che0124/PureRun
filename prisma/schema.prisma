@@ -9,7 +9,7 @@ datasource db {
 }
 
 model GarminStats {
-  id              Int      @id @default(1)
+  deviceId        String   @id
   weeklyKm        Float
   avgHr           Float
   avgPaceStr      String
@@ -19,7 +19,9 @@ model GarminStats {
 }
 
 model GarminActivity {
-  activityId      BigInt   @id
+  id              String   @id @default(uuid())
+  deviceId        String
+  activityId      BigInt
   source          String   @default("Garmin") // "Garmin" or "Strava"
   activityName    String
   date            DateTime // 建議從 String 更改為 DateTime，方便日後範圍查詢與排序
@@ -47,10 +49,13 @@ model GarminActivity {
   verticalOscillation Float?  // 垂直振幅 (cm)
   groundContactTime   Int?    // 觸地時間 (ms)
   splitsData          String? // JSON string: Array of laps/splits
+
+  @@unique([deviceId, activityId])
 }
 
 model TrainingPlan {
   id             String    @id @default(uuid())
+  deviceId       String
   startDate      String // YYYY-MM-DD
   endDate        String // YYYY-MM-DD
   weeklyAnalysis String
@@ -80,6 +85,7 @@ model Workout {
 
 model FitnessStatus {
   id        String   @id @default(uuid())
+  deviceId  String
   date      String   // YYYY-MM-DD
   ctl       Float    // Chronic Training Load (Fitness)
   atl       Float    // Acute Training Load (Fatigue)
@@ -87,5 +93,5 @@ model FitnessStatus {
   acwr      Float    // Acute/Chronic Workload Ratio
   createdAt DateTime @default(now())
 
-  @@unique([date])
+  @@unique([deviceId, date])
 }

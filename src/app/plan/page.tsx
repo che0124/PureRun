@@ -1,7 +1,7 @@
 import React from 'react';
 import ScienceEngine from '@/components/ScienceEngine';
 import { prisma } from '@/lib/db';
-
+import { getDeviceId } from '@/lib/device';
 export const dynamic = 'force-dynamic';
 
 export default async function PlanPage() {
@@ -9,11 +9,14 @@ export default async function PlanPage() {
   let realCtl = 40;
   let hasRealData = false;
 
+  const deviceId = await getDeviceId();
+
   try {
-    const stats = await prisma.garminStats.findFirst({
-      orderBy: { updatedAt: 'desc' }
+    const stats = await prisma.garminStats.findUnique({
+      where: { deviceId }
     });
     const fitness = await prisma.fitnessStatus.findFirst({
+      where: { deviceId },
       orderBy: { createdAt: 'desc' }
     });
 

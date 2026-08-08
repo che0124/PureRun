@@ -4,6 +4,7 @@ const { GarminConnect } = require('garmin-connect');
 import { normalizeActivity } from '@/lib/garmin';
 
 import { prisma } from '@/lib/db';
+import { getDeviceId } from '@/lib/device';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -15,6 +16,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function POST(req: Request) {
   try {
     const { garminEmail, garminPassword } = await req.json();
+    const deviceId = await getDeviceId();
 
     const hasGarmin = !!(garminEmail && garminPassword);
 
@@ -85,7 +87,9 @@ export async function POST(req: Request) {
 
       // 檢查是否已存在
       const existing = await prisma.garminActivity.findUnique({
-        where: { activityId: activityIdBigInt }
+        where: { 
+          deviceId_activityId: { deviceId, activityId: activityIdBigInt }
+        }
       });
 
       // 如果不存在，進一步呼叫 Garmin API 下載 GPX 檔案並存入本地資料夾
@@ -113,12 +117,15 @@ export async function POST(req: Request) {
 
       // 3. 針對每一筆活動，使用 Prisma 的 upsert 方法寫入 SQLite
       await prisma.garminActivity.upsert({
-        where: { activityId: activityIdBigInt },
+        where: { 
+          deviceId_activityId: { deviceId, activityId: activityIdBigInt }
+        },
         update: {
           activityName: act.activityName,
           // 如果只需要更新摘要可在此處加入更多欄位，若已存在則不修改原始歷史資料
         },
         create: {
+          deviceId,
           activityId:      activityIdBigInt,
           source:          act.source || 'Garmin',
           activityName:    act.activityName,
@@ -147,7 +154,9 @@ export async function POST(req: Request) {
     // --------------------------------------------------------
     // 更新儀表板統計資料 (GarminStats)
     // --------------------------------------------------------
-    const allActivities = await prisma.garminActivity.findMany();
+    const allActivities = await prisma.garminActivity.findMany({
+      where: { deviceId }
+    });
     let weeklyKm = 0;
     let totalHr = 0;
     let hrCount = 0;
@@ -173,11 +182,12 @@ export async function POST(req: Request) {
     weeklyKm = Math.round(weeklyKm * 10) / 10;
     const avgHr = hrCount > 0 ? Math.round(totalHr / hrCount) : 0;
     const firstRun = await prisma.garminActivity.findFirst({
+        where: { deviceId },
         orderBy: { date: 'desc' }
     });
 
     await prisma.garminStats.upsert({
-      where: { id: 1 },
+      where: { deviceId },
       update: {
         weeklyKm,
         avgHr,
@@ -186,7 +196,7 @@ export async function POST(req: Request) {
         totalActivities: allActivities.length,
       },
       create: {
-        id: 1,
+        deviceId,
         weeklyKm,
         avgHr,
         avgPaceStr: firstRun?.avgPaceStr || '--',
@@ -199,7 +209,7 @@ export async function POST(req: Request) {
     // 自動更新已完成的訓練計畫 (Workouts)
     // --------------------------------------------------------
     const activeWorkouts = await prisma.workout.findMany({
-      where: { status: 'Pending' }
+      where: { status: 'Pending', plan: { deviceId } }
     });
     const todayStr = new Date().toISOString().split('T')[0];
 
