@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     const startDate = firstActDate < maxWarmupDate ? maxWarmupDate : firstActDate;
     const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
     
-    const actsByDate = new Map();
+    const actsByDate = new Map<string, typeof allActivitiesAsc>();
     allActivitiesAsc.forEach(a => {
       const dObj = typeof a.date === 'string' ? new Date(a.date) : a.date;
       if (!dObj || isNaN(dObj.getTime())) return;
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       const d = String(dObj.getDate()).padStart(2, '0');
       const dStr = `${y}-${m}-${d}`;
       if (!actsByDate.has(dStr)) actsByDate.set(dStr, []);
-      actsByDate.get(dStr).push(a);
+      actsByDate.get(dStr)!.push(a);
     });
     
     for (let i = 0; i <= daysDiff; i++) {
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
       
       dayActs.forEach(act => {
         const hrFactor = act.avgHr ? (act.avgHr / 150) : 1;
-        dailyTss += (act.durationMin) * Math.pow(hrFactor, 2) * 1.5; 
+        dailyTss += (act.durationMin || 0) * Math.pow(hrFactor, 2) * 1.5; 
       });
 
       currentCtl = currentCtl + 0.0465 * (dailyTss - currentCtl);
