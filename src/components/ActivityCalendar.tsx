@@ -33,7 +33,7 @@ export default function ActivityCalendar({ activities }: Props) {
     // Group activities by date
     const dataMap = new Map<string, number>();
     activities.forEach(act => {
-      let dObj = typeof act.date === 'string' ? new Date(act.date) : act.date;
+      const dObj = typeof act.date === 'string' ? new Date(act.date) : act.date;
       if (dObj && !isNaN(dObj.getTime())) {
         const y = dObj.getFullYear();
         const m = String(dObj.getMonth() + 1).padStart(2, '0');
@@ -85,17 +85,17 @@ export default function ActivityCalendar({ activities }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2">
         {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-          <div key={day} className="text-center text-xs font-bold text-[var(--text-muted)] py-1">
+          <div key={day} className="text-center text-[10px] md:text-xs font-bold text-[var(--text-muted)] py-1">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2 flex-1">
+      <div className="grid grid-cols-7 auto-rows-fr gap-1 md:gap-2 flex-1">
         {Array.from({ length: emptyDaysAtStart }).map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-square rounded-xl bg-[var(--input-bg)]" />
+          <div key={`empty-${i}`} className="w-full h-full rounded-lg md:rounded-xl bg-[var(--input-bg)]" />
         ))}
         {monthData.map(dayInfo => {
           const hasRun = dayInfo.distance > 0;
@@ -120,7 +120,7 @@ export default function ActivityCalendar({ activities }: Props) {
           return (
             <div 
               key={dayInfo.day} 
-              className={`relative aspect-square rounded-xl border flex flex-col items-center justify-center transition-all duration-300 ${intensityClass} ${isToday ? 'ring-2 ring-blue-500/50 ring-offset-2 ring-offset-background' : ''}`}
+              className={`relative w-full h-full min-h-[4rem] rounded-lg md:rounded-xl border flex flex-col items-center justify-center transition-all duration-300 ${intensityClass} ${isToday ? 'ring-2 ring-blue-500/50 ring-offset-2 ring-offset-background' : ''}`}
             >
               {isRaceDay && (
                 <div className="absolute -top-1.5 -right-1.5 z-10 bg-background rounded-full">

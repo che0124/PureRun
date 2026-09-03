@@ -1,32 +1,26 @@
 import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 
-let dbUrl = process.env.DATABASE_URL || "file:./dev.db";
-
-// Fallback for Vercel Serverless environment (which is read-only except for /tmp)
-if (process.env.VERCEL && !process.env.DATABASE_URL) {
-  const tmpDbPath = '/tmp/dev.db';
-  const localDbPath = path.join(process.cwd(), 'prisma', 'dev.db');
-  
-  if (!fs.existsSync(tmpDbPath)) {
-    if (fs.existsSync(localDbPath)) {
-      fs.copyFileSync(localDbPath, tmpDbPath);
-    } else {
-      console.warn("Could not find dev.db at " + localDbPath);
-    }
+const prismaClientSingleton = () => {
+  let connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is not defined');
   }
-  dbUrl = `file:${tmpDbPath}`;
+
+  // 清除任何可能的隱藏字元
+  connectionString = connectionString.trim().replace(/^["']|["']$/g, '');
+
+  // 使用 Neon HTTP driver adapter 繞過 Prisma native engine (TCP/SNI) 以及 ws Pool 的問題
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adapter = new PrismaNeonHTTP(connectionString, {} as any);
+
+  return new PrismaClient({ adapter });
+};
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+
+export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
 }
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl,
-    },
-  },
-});
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

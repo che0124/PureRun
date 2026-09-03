@@ -13,18 +13,22 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "postinstall": "prisma generate",
     "setup": "npm install && npx prisma db push && npm run dev"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
-    "@prisma/adapter-libsql": "^7.8.0",
+    "@google/generative-ai": "^0.24.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "@tailwindcss/typography": "^0.5.20",
     "@types/leaflet": "^1.9.21",
+    "@types/ws": "^8.18.1",
     "axios": "^1.18.1",
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
     "garmin-connect": "^1.6.2",
+    "html-to-image": "^1.11.13",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",
     "lucide-react": "^1.24.0",
@@ -33,7 +37,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-leaflet": "^5.0.0",
-    "react-markdown": "^10.1.0"
+    "react-markdown": "^10.1.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

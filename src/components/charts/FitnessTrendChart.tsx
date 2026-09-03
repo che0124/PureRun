@@ -26,6 +26,7 @@ export default function FitnessTrendChart({ data }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
+        appendToBody: true,
         backgroundColor: theme.tooltipBg,
         borderColor: theme.gridLineColor,
         textStyle: { color: theme.tooltipText },
@@ -118,9 +119,8 @@ export default function FitnessTrendChart({ data }: Props) {
   }
 
   return (
-    <div className="rounded-[1.5rem] p-6 w-full h-full flex flex-col justify-center min-h-[200px]">
-      <h3 className="mb-4 text-lg font-bold text-[var(--text-primary)] tracking-wide">訓練負荷與體能趨勢</h3>
-      <ReactECharts option={options} style={{ height: '100%', width: '100%', minHeight: '200px' }} />
+    <div className="w-full h-full flex flex-col justify-center">
+      <ReactECharts option={options} style={{ height: '100%', width: '100%' }} />
     </div>
   );
 }

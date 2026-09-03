@@ -10,6 +10,12 @@ interface Props {
 }
 
 export default function ClientActivityHrZones({ activity }: Props) {
+  const [mounted, setMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const hrZones = useMemo(() => {
     let zones: ZoneData[] = [];
     
@@ -23,7 +29,8 @@ export default function ClientActivityHrZones({ activity }: Props) {
 
     // Calculate dynamically from metrics using user credentials
     if (zones.length === 0) {
-      const creds = loadCredentials();
+      // Use defaults during SSR to prevent hydration mismatch, switch to local storage after mount
+      const creds = mounted ? loadCredentials() : { hrZone1Max: 133, hrZone2Max: 154, hrZone3Max: 168, hrZone4Max: 173 } as ReturnType<typeof loadCredentials>;
       const z1Max = creds.hrZone1Max || 133;
       const z2Max = creds.hrZone2Max || 154;
       const z3Max = creds.hrZone3Max || 168;
@@ -74,15 +81,13 @@ export default function ClientActivityHrZones({ activity }: Props) {
         ];
       }
     }
-    
     return zones;
-  }, [activity]);
+  }, [activity, mounted]);
 
   if (hrZones.length === 0) return null;
 
   return (
-    <div className="mt-4 flex-grow border-t border-border pt-6 space-y-4">
-      <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">心率區間分佈</h3>
+    <div className="flex-grow space-y-4">
       <div className="space-y-3">
         {hrZones.map(zone => (
           <div key={zone.name} className="flex items-center gap-3">

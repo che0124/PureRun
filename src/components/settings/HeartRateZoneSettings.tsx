@@ -32,7 +32,7 @@ export default function HeartRateZoneSettings({
 
   // Constants for default percentages
   const DEFAULTS_HRR = [59, 74, 84, 88, 95]; // Bottom % for Z1-Z5
-  const DEFAULTS_MAXHR = [59, 74, 84, 88, 95];
+  const DEFAULTS_MAXHR = [50, 60, 70, 80, 90];
 
   // Helper to convert % to BPM
   const pctToBpm = (pct: number, method: HRCalcMethod, min: number, max: number) => {
@@ -205,22 +205,28 @@ export default function HeartRateZoneSettings({
       </div>
 
       {/* Zone List */}
-      <div className="bg-background border border-border rounded-xl overflow-hidden">
-        {/* Changed grid-cols-12 to nested flex/grid for responsive layout or just use hidden sm:grid */}
-        <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-surface border-b border-border text-xs font-bold uppercase text-[var(--text-secondary)] tracking-wider">
-          <div className="col-span-1 text-center">區域</div>
-          <div className="col-span-3">名稱</div>
-          <div className="col-span-4 text-center">%</div>
-          <div className="col-span-4 text-center">BPM</div>
+      <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="hidden sm:flex items-center gap-4 px-6 py-3 bg-surface-hover/30 border-b border-border text-xs font-bold uppercase text-[var(--text-secondary)] tracking-wider">
+          <div className="w-[30%]">區域名稱</div>
+          <div className="flex-1 flex gap-4 text-center">
+            <div className="flex-1">百分比 (%)</div>
+            <div className="flex-1">心率 (BPM)</div>
+          </div>
         </div>
 
-        <div className="p-4 space-y-2">
+        <div className="p-3 sm:p-4 flex flex-col gap-1">
           {/* Max HR Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-2 py-1">
-            <div className="hidden sm:block col-span-1"></div>
-            <div className="col-span-1 sm:col-span-3 text-sm font-bold text-[var(--text-secondary)]">最大</div>
-            <div className="hidden sm:block col-span-4 text-center text-sm font-mono text-[var(--text-muted)]">100%</div>
-            <div className="col-span-1 sm:col-span-4 text-center text-sm font-mono text-[var(--text-secondary)] bg-surface py-1.5 rounded-md border border-border">{maxHr}</div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-3 py-2 rounded-lg bg-surface/50">
+            <div className="flex items-center gap-3 w-full sm:w-[30%]">
+              <div className="w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center">
+                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              </div>
+              <span className="text-sm font-bold text-[var(--text-secondary)]">最大心率</span>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:flex-1">
+              <div className="flex-1 text-center text-sm font-mono text-[var(--text-muted)] bg-background py-2.5 rounded-lg border border-transparent">100%</div>
+              <div className="flex-1 text-center text-sm font-mono text-[var(--text-secondary)] bg-background py-2.5 rounded-lg border border-border shadow-sm">{maxHr} bpm</div>
+            </div>
           </div>
 
           {zoneKeys.map((key, i) => {
@@ -232,51 +238,40 @@ export default function HeartRateZoneSettings({
             const isError = errorLines.includes(revIndex);
 
             return (
-              <React.Fragment key={currentKey}>
-                <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-4 items-center group">
-                  <div className="hidden sm:flex col-span-1 justify-center">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-[var(--text-primary)]" style={{ backgroundColor: zoneColors[revIndex] }}>
-                      {revIndex + 1}
-                    </div>
+              <div key={currentKey} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 group px-3 py-2 rounded-lg hover:bg-surface/30 transition-colors">
+                {/* Zone Icon & Name */}
+                <div className="flex items-center gap-3 w-full sm:w-[30%]">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: zoneColors[revIndex] }}>
+                    {revIndex + 1}
                   </div>
-                  <div className="col-span-1 sm:col-span-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-                    <div className="sm:hidden w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: zoneColors[revIndex] }}></div>
+                  <span className="text-sm font-bold text-[var(--text-primary)]">
                     {zoneNames[revIndex]}
+                  </span>
+                </div>
+                
+                {/* Inputs: % and BPM Side by Side */}
+                <div className="flex items-center gap-2 sm:gap-4 w-full sm:flex-1">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={`w-full bg-background border ${isError ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500 focus:ring-rose-500/40' : 'border-border focus:border-emerald-400 focus:ring-emerald-400/40'} rounded-lg p-2.5 text-center text-sm text-[var(--text-primary)] font-mono transition-all outline-none focus:ring-1 shadow-sm`}
+                      value={pctVal}
+                      onChange={e => handlePctChange(revIndex, e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[var(--text-muted)] font-bold pointer-events-none">%</span>
                   </div>
-                  <div className="col-span-2 sm:col-span-4 relative flex items-center gap-2 sm:block">
-                    <span className="sm:hidden text-xs text-[var(--text-muted)] w-8">%</span>
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        step="0.1"
-                        className={`w-full bg-surface border ${isError ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500 focus:ring-rose-500/40' : 'border-border focus:border-emerald-400 focus:ring-emerald-400/40'} rounded-lg p-2 text-center text-sm text-[var(--text-primary)] font-mono transition-all outline-none focus:ring-1`}
-                        value={pctVal}
-                        onChange={e => handlePctChange(revIndex, e.target.value)}
-                      />
-                      <span className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]">%</span>
-                    </div>
-                  </div>
-                  <div className="col-span-2 sm:col-span-4 relative flex items-center gap-2 sm:block">
-                    <span className="sm:hidden text-xs text-[var(--text-muted)] w-8">BPM</span>
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        className={`w-full bg-surface border ${isError ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500 focus:ring-rose-500/40' : 'border-border focus:border-emerald-400 focus:ring-emerald-400/40'} rounded-lg p-2 text-center text-sm text-[var(--text-primary)] font-mono transition-all outline-none focus:ring-1`}
-                        value={bpmVal}
-                        onChange={e => handleBpmChange(revIndex, e.target.value)}
-                      />
-                      <span className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]">bpm</span>
-                    </div>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      className={`w-full bg-background border ${isError ? 'border-rose-500/50 bg-rose-500/5 focus:border-rose-500 focus:ring-rose-500/40' : 'border-border focus:border-emerald-400 focus:ring-emerald-400/40'} rounded-lg p-2.5 text-center text-sm text-[var(--text-primary)] font-mono transition-all outline-none focus:ring-1 shadow-sm`}
+                      value={bpmVal}
+                      onChange={e => handleBpmChange(revIndex, e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[var(--text-muted)] font-bold pointer-events-none">bpm</span>
                   </div>
                 </div>
-                {/* Visual Connector / Bracket */}
-                {revIndex > 0 && (
-                  <div className="hidden sm:grid grid-cols-12 px-2">
-                    <div className="col-span-1"></div>
-                    <div className="col-span-11 h-4 border-l-2 border-border ml-2"></div>
-                  </div>
-                )}
-              </React.Fragment>
+              </div>
             );
           })}
         </div>

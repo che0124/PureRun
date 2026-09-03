@@ -90,7 +90,7 @@ export function normalizeActivity(raw: IActivity): NormalizedActivity {
   return {
     activityId:       raw.activityId,
     activityName:     raw.activityName ?? 'Unknown Activity',
-    date:             raw.startTimeLocal?.split(' ')[0] ?? raw.startTimeGMT?.split('T')[0] ?? '',
+    date:             raw.startTimeGMT ? raw.startTimeGMT.replace(' ', 'T') + 'Z' : (raw.startTimeLocal ? raw.startTimeLocal.replace(' ', 'T') : ''),
     distanceKm:       Math.round(distKm * 100) / 100,
     durationMin:      Math.round(durMin * 10) / 10,
     avgHr:            raw.averageHR ?? null,
@@ -167,7 +167,7 @@ export async function fetchGarminData(
     }
     
     try {
-      const details = await gc.get(`/activity-service/activity/${act.activityId}/details`);
+      const details = await gc.get(`https://connectapi.garmin.com/activity-service/activity/${act.activityId}/details`);
       if (details && details.geoPolylineDTO && details.geoPolylineDTO.polyline) {
         const points = details.geoPolylineDTO.polyline
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

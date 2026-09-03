@@ -8,14 +8,15 @@ import {
   Route
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatDurationHHMMSS } from '@/lib/formatters';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function RecentActivitiesList({ activities, isCompact = false }: { activities: any[], isCompact?: boolean }) {
-  if (activities.length === 0) {
+  if (!activities || activities.length === 0) {
     return (
-      <div className={`bg-[var(--input-bg)] backdrop-blur-3xl border border-border rounded-3xl ${isCompact ? 'p-6' : 'p-12'} text-center flex flex-col items-center justify-center min-h-[${isCompact ? '150px' : '300px'}] shadow-xl`}>
-        <div className="text-[var(--text-accent)] mb-4 opacity-50 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">
-          <Activity className="w-10 h-10" />
+      <div className={`card-glass flex flex-col items-center justify-center text-center ${isCompact ? 'p-6 min-h-[150px]' : 'p-6 md:p-8 min-h-[300px]'}`}>
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+          <Activity className="w-6 h-6 text-emerald-500" />
         </div>
         <p className="font-sans text-[var(--text-muted)] text-sm tracking-wider">尚未同步任何活動紀錄</p>
       </div>
@@ -23,116 +24,65 @@ export default function RecentActivitiesList({ activities, isCompact = false }: 
   }
 
   return (
-    <div className={`flex flex-col ${isCompact ? 'gap-3' : 'gap-5'}`}>
+    <div className={`flex flex-col ${isCompact ? 'gap-3' : 'gap-4'}`}>
       {activities.map((act) => (
         <Link
           href={`/activity/${act.activityId}`}
           key={act.activityId.toString()}
-          className={`bg-[var(--input-bg)] backdrop-blur-xl border border-border rounded-[24px] ${isCompact ? 'p-4' : 'p-6 md:p-8'} flex flex-col ${isCompact ? '' : 'md:flex-row md:items-center'} justify-between group hover:bg-surface-hover hover:border-emerald-500/30 transition-all duration-300 relative overflow-hidden hover:shadow-[0_0_20px_-5px_rgba(52,211,153,0.15)] hover:-translate-y-0.5`}
+          className={`group w-full flex items-center gap-4 ${isCompact ? 'p-4' : 'p-4 md:p-6'} relative overflow-hidden card-glass`}
         >
-          {isCompact ? (
-            // Compact Layout
-            <div className="flex items-center justify-between w-full relative z-10">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[18px] bg-surface-hover/50 border border-border flex items-center justify-center shrink-0 group-hover:bg-emerald-500/10 group-hover:border-emerald-500/20 transition-all duration-300">
-                  {act.activityTypeKey === 'running' ? (
-                    <Route className="w-5 h-5 text-[var(--text-accent)] drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                  ) : (
-                    <Activity className="w-5 h-5 text-[var(--text-muted)]" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-sans font-bold text-[var(--text-primary)] text-[15px] uppercase tracking-wider group-hover:text-[var(--text-accent)] transition-colors truncate max-w-[150px]">
-                    {act.activityName}
-                  </h3>
-                  <span className="font-mono text-xs text-[var(--text-muted)] block mt-1 tracking-wide">
-                    {new Date(act.date).toISOString().split('T')[0]}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                <div className="text-right flex items-center gap-6">
-                  <div className="flex flex-col">
-                    <div className="font-mono text-lg font-bold text-[var(--text-primary)] flex items-baseline gap-1 justify-end">
-                      {act.distanceKm} <span className="text-[10px] text-[var(--text-muted)] font-sans tracking-widest uppercase">km</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col hidden sm:flex border-l border-border pl-6">
-                    <div className="font-mono text-[15px] font-medium text-[var(--text-secondary)] flex items-baseline gap-1 justify-end">
-                      {act.avgPaceStr ?? '--'} <span className="text-[10px] text-[var(--text-muted)] font-sans tracking-widest uppercase">/km</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-surface-hover/50 border border-border flex items-center justify-center shrink-0 group-hover:bg-emerald-400 group-hover:border-emerald-400 transition-all duration-300 shadow-lg">
-                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
-                </div>
+          {/* Icon */}
+          <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/10 transition-colors">
+            {act.activityTypeKey === 'running' ? (
+              <Route className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Activity className="w-4 h-4 text-[var(--text-muted)]" />
+            )}
+          </div>
+
+          {/* Title & Date */}
+          <div className="flex flex-col flex-1 min-w-0 justify-center">
+            <h3 className="font-sans font-bold text-[var(--text-primary)] text-sm truncate group-hover:text-emerald-500 transition-colors">
+              {act.activityName}
+            </h3>
+            <span className="font-mono text-[10px] text-[var(--text-muted)] truncate">
+              {new Date(act.date).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex items-center gap-3 shrink-0 text-right">
+            <div className="flex flex-col items-end">
+              <div className="flex items-baseline gap-0.5">
+                <span className={`font-mono font-bold text-[var(--text-primary)] ${isCompact ? 'text-sm' : 'text-sm md:text-base'}`}>{act.distanceKm}</span>
+                <span className="text-[9px] text-[var(--text-muted)]">km</span>
               </div>
             </div>
-          ) : (
-            // Regular Layout (Original)
-            <>
-              {/* Left: Icon, Name and Date */}
-              <div className="flex items-start gap-4 mb-6 md:mb-0 md:w-1/4">
-                <div className="w-10 h-10 rounded-2xl bg-background flex items-center justify-center shrink-0">
-                  {act.activityTypeKey === 'running' ? (
-                    <Route className="w-5 h-5 text-[var(--text-accent)]" />
-                  ) : (
-                    <Activity className="w-5 h-5 text-[var(--text-muted)]" />
-                  )}
+            
+            {!isCompact && (
+              <>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-mono text-sm md:text-base font-bold text-[var(--text-secondary)]">{act.avgPaceStr ?? '--'}</span>
+                    <span className="text-[9px] text-[var(--text-muted)]">/km</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-sans font-bold text-[var(--text-primary)] text-base uppercase tracking-wide group-hover:text-[var(--text-accent)] transition-colors">
-                    {act.activityName}
-                  </h3>
-                  <span className="font-mono text-xs text-[var(--text-muted)] mt-1 block">
-                    {new Date(act.date).toISOString().split('T')[0]}
-                  </span>
-                </div>
-              </div>
 
-              {/* Middle: Core Stats (Distance, Pace, Time) */}
-              <div className="flex items-center justify-between md:justify-start md:gap-16 flex-1 mb-6 md:mb-0">
-                <div className="flex flex-col">
-                  <span className="font-sans text-xs text-[var(--text-muted)] mb-2">距離 <span className="text-[10px]">km</span></span>
-                  <div className="font-mono text-4xl font-bold text-[var(--text-primary)]">
-                    {act.distanceKm}
+                <div className="hidden sm:flex flex-col items-end">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-mono text-sm md:text-base font-bold text-[var(--text-secondary)]">{formatDurationHHMMSS(act.durationMin)}</span>
                   </div>
                 </div>
-                
-                <div className="flex flex-col">
-                  <span className="font-sans text-xs text-[var(--text-muted)] mb-2">配速 <span className="text-[10px]">/km</span></span>
-                  <div className="font-mono text-4xl font-bold text-[var(--text-primary)]">
-                    {act.avgPaceStr ?? <span className="opacity-30">--</span>}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col">
-                  <span className="font-sans text-xs text-[var(--text-muted)] mb-2">時間 <span className="text-[10px]">min</span></span>
-                  <div className="font-mono text-4xl font-bold text-[var(--text-primary)]">
-                    {act.durationMin}
-                  </div>
-                </div>
-              </div>
+              </>
+            )}
 
-              {/* Right: Secondary Stats (HR) and Action Button */}
-              <div className="flex items-center justify-between md:justify-end md:w-1/5 gap-6">
-                <div className="flex flex-col items-start md:items-end">
-                  <span className="font-sans text-xs text-[var(--text-muted)] mb-2 flex items-center gap-1">
-                    <Heart className="w-3 h-3" /> 心率 <span className="text-[10px]">bpm</span>
-                  </span>
-                  <span className="font-mono text-2xl font-bold text-[var(--text-secondary)]">
-                    {act.avgHr ?? <span className="opacity-30">--</span>}
-                  </span>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center shrink-0 group-hover:bg-emerald-500 group-hover:text-[var(--text-primary)] transition-colors">
-                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
-                </div>
-              </div>
-            </>
-          )}
+            <div className="w-6 h-6 rounded-full flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors shrink-0 ml-1 hidden md:flex">
+              <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-emerald-500" />
+            </div>
+          </div>
         </Link>
       ))}
     </div>
   );
 }
+

@@ -10,12 +10,18 @@ interface Props {
 }
 
 export default function ClientZoneChartWrapper({ activities }: Props) {
+  const [creds, setCreds] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    setCreds(loadCredentials());
+  }, []);
+
   const zones = useMemo(() => {
-    const creds = loadCredentials();
-    const z1Max = creds.hrZone1Max || 130;
-    const z2Max = creds.hrZone2Max || 150;
-    const z3Max = creds.hrZone3Max || 165;
-    const z4Max = creds.hrZone4Max || 175;
+    if (!creds) return [];
+    const z1Max = creds.hrZone1Max || 133;
+    const z2Max = creds.hrZone2Max || 154;
+    const z3Max = creds.hrZone3Max || 168;
+    const z4Max = creds.hrZone4Max || 173;
 
     let z1 = 0, z2 = 0, z3 = 0, z4 = 0, z5 = 0;
     
@@ -52,7 +58,7 @@ export default function ClientZoneChartWrapper({ activities }: Props) {
       { name: `Z4 乳酸 (${z3Max}-${z4Max - 1})`, value: Number(((z4 / totalZonePoints) * 100).toFixed(1)), color: '#f59e0b' },
       { name: `Z5 無氧 (>${z4Max - 1})`, value: Number(((z5 / totalZonePoints) * 100).toFixed(1)), color: '#ef4444' },
     ] : [];
-  }, [activities]);
+  }, [activities, creds]);
 
   if (zones.length === 0) return null;
 

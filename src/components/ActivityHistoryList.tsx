@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import RecentActivitiesList from '@/components/RecentActivitiesList';
 import { Loader2 } from 'lucide-react';
+import { formatDurationHHMMSS } from '@/lib/formatters';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ActivityHistoryList({ initialActivities = [] }: { initialActivities?: any[] }) {
@@ -18,7 +19,7 @@ export default function ActivityHistoryList({ initialActivities = [] }: { initia
       const res = await fetch(`/api/activities?page=${currentPage}&limit=10`);
       if (!res.ok) throw new Error('Network response was not ok');
       const data = await res.json();
-      
+
       // 確保日期格式與原本相容
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newActivities = data.data.map((act: any) => ({
@@ -33,7 +34,7 @@ export default function ActivityHistoryList({ initialActivities = [] }: { initia
         const uniqueNew = newActivities.filter((n: any) => !existingIds.has(n.activityId.toString()));
         return [...prev, ...uniqueNew];
       });
-      
+
       setHasMore(data.hasMore);
       setPage((prevPage) => prevPage + 1);
     } catch (error) {
@@ -69,14 +70,51 @@ export default function ActivityHistoryList({ initialActivities = [] }: { initia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const groupedActivities = React.useMemo(() => {
+    const groups: { [monthStr: string]: any[] } = {};
+    activities.forEach(act => {
+      const d = new Date(act.date);
+      if (isNaN(d.getTime())) return;
+      const monthStr = d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+      if (!groups[monthStr]) groups[monthStr] = [];
+      groups[monthStr].push(act);
+    });
+    return groups;
+  }, [activities]);
+
   return (
-    <div className="flex flex-col gap-6 w-full">
-      <RecentActivitiesList activities={activities} />
+    <div className="flex flex-col gap-10 w-full">
+
+      {Object.entries(groupedActivities).map(([monthStr, monthActs]) => {
+        const totalDistance = monthActs.reduce((sum, a) => sum + (a.distanceKm || 0), 0).toFixed(1);
+        const totalDuration = monthActs.reduce((sum, a) => sum + (a.durationMin || 0), 0);
+
+        return (
+          <div key={monthStr} className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end justify-between border-b border-border/50 pb-2 gap-2">
+              <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-wide flex items-center gap-2">
+                <div className="w-2 h-6 bg-emerald-500 rounded-full"></div>
+                {monthStr}
+              </h2>
+              <div className="flex items-center gap-4 text-sm font-mono text-[var(--text-secondary)] bg-surface/30 px-3 py-1 rounded-lg border border-border/50">
+                <span><strong className="text-[var(--text-primary)]">{monthActs.length}</strong> 筆</span>
+                <span><strong className="text-[var(--text-primary)]">{totalDistance}</strong> km</span>
+                <span><strong className="text-[var(--text-primary)]">{formatDurationHHMMSS(totalDuration)}</strong></span>
+              </div>
+            </div>
+            <RecentActivitiesList activities={monthActs} />
+          </div>
+        );
+      })}
+
+      {activities.length === 0 && !loading && (
+        <RecentActivitiesList activities={[]} />
+      )}
 
       {/* 底部載入觸發區 */}
       {hasMore && (
-        <div 
-          ref={loadMoreRef} 
+        <div
+          ref={loadMoreRef}
           className="w-full flex justify-center py-8 text-emerald-500/50"
         >
           {loading ? (
@@ -91,7 +129,7 @@ export default function ActivityHistoryList({ initialActivities = [] }: { initia
       )}
 
       {!hasMore && activities.length > 0 && (
-        <div className="w-full text-center py-8">
+        <div className="w-full text-center border-t border-border/30">
           <span className="font-mono text-xs text-[var(--text-muted)] tracking-widest uppercase">
             已載入全部活動紀錄
           </span>

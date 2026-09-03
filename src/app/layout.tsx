@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
 const inter = Inter({
@@ -32,9 +33,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "PureRun AI — Your Intelligent Running Coach",
+  title: {
+    default: "PureRun",
+    template: "%s | PureRun",
+  },
   description: "AI-powered training plans personalized to your Garmin data. Optimize your running performance with dynamic coaching.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico?v=7", sizes: "any" },
+      { url: "/favicon-pr-192.png?v=7", type: "image/png", sizes: "192x192" },
+    ],
+    shortcut: "/favicon.ico?v=7",
+    apple: [
+      { url: "/apple-touch-icon.png?v=7", sizes: "180x180", type: "image/png" }
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -51,8 +65,17 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="antialiased selection:bg-emerald-500/30 selection:text-emerald-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 bg-background">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Navbar />
-          {children}
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <div className="md:hidden sticky top-0 z-50 w-full">
+                <Navbar />
+              </div>
+              <main className="flex-1 flex flex-col">
+                {children}
+              </main>
+            </div>
+          </div>
           <MobileBottomNav />
         </ThemeProvider>
       </body>

@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     });
 
     // 處理 BigInt 問題
-    const serializedActivities = activities.map((a) => ({
+    const serializedActivities = activities.map((a: any) => ({
       ...a,
       activityId: a.activityId.toString(), // 轉為字串避免 JSON error
     }));

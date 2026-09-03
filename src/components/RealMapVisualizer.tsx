@@ -50,13 +50,17 @@ export default function RealMapVisualizer({ routeData }: { routeData?: string })
     );
   }
 
-  const center = points[0];
+  const bounds = useMemo(() => {
+    if (!points || points.length === 0) return undefined;
+    return L.latLngBounds(points);
+  }, [points]);
 
   return (
     <div className="relative w-full h-[300px] md:h-[400px] rounded-2xl overflow-hidden border border-border shadow-2xl z-0 group">
       <MapContainer 
-        center={center} 
-        zoom={15} 
+        bounds={bounds}
+        boundsOptions={{ padding: [20, 20] }}
+        zoomSnap={0.1}
         scrollWheelZoom={false} 
         style={{ height: '100%', width: '100%', backgroundColor: 'var(--background)' }}
       >

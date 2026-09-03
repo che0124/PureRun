@@ -3,6 +3,7 @@
 import React from 'react';
 import type { NormalizedActivity } from '@/lib/garmin';
 import { X, Calendar, Activity, Timer, Heart, Map, ActivitySquare, Flame, Mountain, Footprints, Zap } from 'lucide-react';
+import { formatDurationHHMMSS } from '@/lib/formatters';
 
 interface Props {
   activity: NormalizedActivity | null;
@@ -57,8 +58,8 @@ export default function ActivityDetailPanel({ activity, onClose }: Props) {
             </div>
             <div className="flex flex-col items-center justify-center p-4 bg-background/40 rounded-xl border border-border">
               <Activity className="w-5 h-5 text-rose-400 mb-2" />
-              <span className="text-xl font-black text-[var(--text-primary)] font-mono">{Math.floor(activity.durationMin)}</span>
-              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">時間 (分)</span>
+              <span className="text-xl font-black text-[var(--text-primary)] font-mono">{formatDurationHHMMSS(activity.durationMin)}</span>
+              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mt-1">時間</span>
             </div>
           </div>
 

@@ -2,80 +2,111 @@
 @plugin "@tailwindcss/typography";
 
 /* =========================================
-   Light Theme (Default)
+   Design System: Typography & Shadows (Theme)
    ========================================= */
 @theme {
-  --color-background: #f8fafc;        /* slate-50 */
-  --color-surface: #ffffff;            /* white */
-  --color-surface-hover: #f1f5f9;     /* slate-100 */
-  --color-border: #e2e8f0;            /* slate-200 */
+  /* 高密度排版 (Density 8) - 讓圖表與數據列更緊湊 */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.4rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
 
-  --color-primary: #10b981;           /* emerald-500 */
-  --color-primary-hover: #059669;     /* emerald-600 */
-  --color-primary-light: #34d399;     /* emerald-400 */
+  /* 擴充陰影定義 */
+  --shadow-card-light: 0 1px 3px rgba(0,0,0,0.05), 0 4px 6px -1px rgba(0,0,0,0.02);
+  --shadow-card-dark: 0 8px 32px -8px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 15px rgba(16, 185, 129, 0.3);
 
-  --color-slate-850: #151e2e;
-  --color-emerald-450: #10b981;
-  --color-emerald-455: #059669;
+  /* 主題色系綁定 */
+  --color-background: var(--bg-body);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-border: var(--border-base);
+
+  /* Emerald 主色調 */
+  --color-primary: #10b981;       
+  --color-primary-hover: #059669; 
+  --color-primary-light: #34d399; 
 }
 
 /* =========================================
-   Semantic Token CSS Variables
+   Semantic Variables (Light Mode)
    ========================================= */
 :root {
-  --text-primary: #0f172a;            /* slate-900 */
-  --text-secondary: #334155;          /* slate-700 (improved contrast) */
-  --text-muted: #64748b;             /* slate-500 (improved contrast) */
-  --text-accent: var(--color-primary-hover); /* emerald-600 */
-  --input-bg: #f1f5f9;               /* slate-100 */
-  --input-border: #cbd5e1;           /* slate-300 */
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  --overlay-bg: rgba(0,0,0,0.3);
-  --chart-text: #334155;             /* slate-700 */
-  --chart-subtext: #64748b;          /* slate-500 */
-  --chart-grid: #e2e8f0;            /* slate-200 */
+  /* 背景與容器 */
+  --bg-body: #f8fafc;            /* slate-50 */
+  --bg-surface: #ffffff;         
+  --bg-surface-hover: #f1f5f9;   /* slate-100 */
+  --border-base: #e2e8f0;        /* slate-200 */
+
+  /* 文字色彩 */
+  --text-primary: #0f172a;       /* slate-900 */
+  --text-secondary: #334155;     /* slate-700 */
+  --text-muted: #64748b;         /* slate-500 */
+  --text-accent: var(--color-primary-hover);
+
+  /* 儀表板圖表與控制元件 */
+  --input-bg: #f1f5f9;
+  --input-border: #cbd5e1;
+  --card-shadow: var(--shadow-card-light);
+  --chart-text: #334155;
+  --chart-grid: #f1f5f9;
   --chart-tooltip-bg: rgba(255,255,255,0.95);
-  --chart-tooltip-text: #0f172a;
+  
   color-scheme: light;
 }
 
 /* =========================================
-   Dark Theme
+   Semantic Variables (Dark Mode)
    ========================================= */
 :root.dark {
-  --color-background: #020617;       /* slate-950 */
-  --color-surface: #0f172a;          /* slate-900 */
-  --color-surface-hover: #1e293b;   /* slate-800 */
-  --color-border: #1e293b;          /* slate-800 */
+  /* 背景與容器 */
+  --bg-body: #020617;            /* slate-950 */
+  --bg-surface: #0f172a;         /* slate-900 */
+  --bg-surface-hover: #1e293b;   /* slate-800 */
+  --border-base: #1e293b;        /* slate-800 */
   
-  --text-primary: #f8fafc;          /* slate-50 (improved contrast) */
-  --text-secondary: #cbd5e1;        /* slate-300 (improved contrast) */
-  --text-muted: #94a3b8;            /* slate-400 (improved contrast) */
-  --text-accent: var(--color-primary-light); /* emerald-400 */
-  --input-bg: rgba(30,41,59,0.5);   /* slate-800/50 */
-  --input-border: #334155;          /* slate-700 */
-  --card-shadow: 0 8px 32px -8px rgba(0,0,0,0.4);
-  --overlay-bg: rgba(0,0,0,0.6);
-  --chart-text: #f8fafc;
-  --chart-subtext: #cbd5e1;
+  /* 文字色彩 */
+  --text-primary: #f8fafc;       /* slate-50 */
+  --text-secondary: #cbd5e1;     /* slate-300 */
+  --text-muted: #94a3b8;         /* slate-400 */
+  --text-accent: var(--color-primary-light);
+
+  /* 儀表板圖表與控制元件 */
+  --input-bg: rgba(30,41,59,0.5);
+  --input-border: #334155;
+  --card-shadow: var(--shadow-card-dark);
+  --chart-text: #e2e8f0;
   --chart-grid: #1e293b;
   --chart-tooltip-bg: rgba(15,23,42,0.9);
-  --chart-tooltip-text: #f8fafc;
+  
   color-scheme: dark;
 }
 
+/* =========================================
+   Utilities
+   ========================================= */
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* =========================================
-   Custom Glass Card Utility
-   ========================================= */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 現代化 Glass 卡片 - 支援深色微光 */
 @utility card-glass {
-  background-color: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  background-color: color-mix(in srgb, var(--bg-surface) 75%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent);
   box-shadow: var(--card-shadow);
   border-radius: 1.5rem;
   transition-property: all;
@@ -83,18 +114,23 @@
   transition-duration: 300ms;
   
   &:hover {
-    border-color: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.08);
+    border-color: color-mix(in srgb, var(--color-primary-light) 40%, transparent);
+    box-shadow: var(--shadow-glow);
   }
 }
 
+/* =========================================
+   Base Styles
+   ========================================= */
 html {
   -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
-  background-color: var(--color-background);
+  background-color: var(--bg-body);
   color: var(--text-primary);
+  font-size: 15px; 
 }
 
 body {
   overscroll-behavior-y: none;
+  line-height: var(--text-base--line-height);
 }

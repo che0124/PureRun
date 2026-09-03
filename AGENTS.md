@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Architecture
 - **Framework**: Next.js 16 (App Router, React 19, TypeScript strict)
-- **Database**: Local SQLite via Prisma ORM + `@prisma/adapter-libsql`. Schema at `prisma/schema.prisma`
+- **Database**: PostgreSQL (Neon) via Prisma ORM. Schema at `prisma/schema.prisma`
 - **AI**: Google Gemini (`gemini-2.0-flash`) via `@google/generative-ai`
 - **Data Source**: Garmin Connect via `garmin-connect` package
 - **Charts**: ECharts (`echarts-for-react`). Maps: Leaflet (`react-leaflet`, must be `ssr: false`)
@@ -17,7 +17,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Core Data Flow
 ```
-Garmin Connect → /api/garmin/sync → SQLite (GarminActivity, GarminStats)
+Garmin Connect → /api/garmin/sync → PostgreSQL (GarminActivity, GarminStats)
                                         ↓
                               Science Engine (VDOT, TRIMP, PMC)
                                         ↓
@@ -57,7 +57,6 @@ Garmin Connect → /api/garmin/sync → SQLite (GarminActivity, GarminStats)
 - Garmin activity IDs are `BigInt` — must convert to `string` before passing to Client Components
 
 ## Hard Constraints
-- Never modify `prisma/dev.db` directly — always use Prisma Client or `prisma db push`
 - Never import Leaflet in a Server Component — always use dynamic import with `ssr: false`
 - Never persist Garmin passwords to database or filesystem
 - Never let AI override science engine's pace/type values — always apply safety overwrite after Gemini response
@@ -80,6 +79,6 @@ src/app/           → Pages (/, /activity, /activity/[id], /plan, /settings)
 src/app/api/       → API routes (auth, garmin sync, ai generate, activities)
 src/components/    → React components (Calendar, ScienceEngine, AiPanel, charts/)
 src/lib/           → Core logic (db, credentials, garmin, gemini, science/)
-prisma/            → Schema + SQLite database file
+prisma/            → Schema
 public/gpx/        → Downloaded GPX route files
 ```

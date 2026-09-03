@@ -6,7 +6,7 @@
 
 PureRun is a beautiful, personalized Next.js dashboard for visualizing your Garmin Connect running data. It features modern UI components, interactive maps for your routes, and integrates with **Google Gemini AI** to generate customized training plans based on your actual Garmin telemetry.
 
-> **Privacy First:** PureRun uses a local SQLite database (`dev.db`). Your Garmin credentials and running data stay entirely on your own machine.
+> **Privacy First:** Your Garmin credentials stay entirely on your own machine. PureRun uses a PostgreSQL database (Neon for cloud or local Docker) to store your synced running data.
 
 ---
 
@@ -18,6 +18,19 @@ PureRun is a beautiful, personalized Next.js dashboard for visualizing your Garm
 - 📱 **PWA Ready**: Install PureRun directly on your iOS or Android home screen for a native, full-screen app experience.
 - 📊 **Beautiful UI/UX**: Built with Tailwind CSS, Lucide Icons, and Next.js App Router for a premium, glassmorphism feel.
 - 🐳 **Docker Ready**: One-click deployment with Docker Compose.
+
+---
+
+## 🗄️ Database Strategy
+
+PureRun uses **PostgreSQL**. Since you might deploy to the cloud (Vercel) but also develop locally, here are the two recommended database strategies:
+
+1. **Neon Branching (Recommended for Cloud)**:
+   - Create a free [Neon](https://neon.tech) PostgreSQL database.
+   - Use your main branch for Vercel production.
+   - Create a `dev` branch in Neon for local development. Update your `.env` to point to the `dev` branch.
+2. **Local Docker PostgreSQL (Offline)**:
+   - Run a fully local PostgreSQL database using the included `docker-compose.yml`. This keeps your development completely offline and separate from the cloud.
 
 ---
 
@@ -65,12 +78,15 @@ The easiest way to get started without installing dependencies.
    cd PureRun
    ```
 
-2. **One-Click Setup:**
+2. **Environment Variables:**
+   Update `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in `.env` to point to your local PostgreSQL (e.g., from Docker) or your Neon `dev` branch. (Note: `.env` is ignored by Git to protect your credentials).
+
+3. **One-Click Setup:**
    Run our automated setup script which installs dependencies, initializes the database, and starts the dev server:
    ```bash
    npm run setup
    ```
-3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 

@@ -41,11 +41,11 @@ export default function SettingsPage() {
     setMaxHr(saved.maxHr || 190);
     setHrCalcMethod(saved.hrCalcMethod || 'hrr');
     setZones({
-      z1Bottom: saved.hrZone0Max || 120,
-      z2Bottom: saved.hrZone1Max || 130,
-      z3Bottom: saved.hrZone2Max || 150,
-      z4Bottom: saved.hrZone3Max || 165,
-      z5Bottom: saved.hrZone4Max || 175
+      z1Bottom: saved.hrZone0Max || 133, // 59% HRR
+      z2Bottom: saved.hrZone1Max || 154, // 74% HRR
+      z3Bottom: saved.hrZone2Max || 168, // 84% HRR
+      z4Bottom: saved.hrZone3Max || 173, // 88% HRR
+      z5Bottom: saved.hrZone4Max || 183  // 95% HRR
     });
 
     if (saved.garminEmail) {
@@ -111,26 +111,24 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-[var(--text-primary)] font-sans selection:bg-emerald-500/30 selection:text-emerald-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-8 w-full">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8 w-full">
         
         {/* Header Section */}
-        <div className="border-b border-border pb-6 relative">
-          <div className="absolute left-0 bottom-0 w-1/3 h-[1px] bg-gradient-to-r from-emerald-500/30 to-transparent"></div>
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-405">
-              <Settings className="w-6 h-6 text-[var(--text-accent)]" />
-            </div>
-            <h1 className="font-sans text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+        <div className="space-y-2 mb-2">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-br from-emerald-500/20 to-transparent text-[var(--text-accent)] text-[11px] font-medium border border-emerald-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <Settings className="w-3.5 h-3.5" />
               偏好設定
-            </h1>
-          </div>
-          <p className="text-[var(--text-secondary)] mt-3 text-sm leading-relaxed max-w-xl">
+            </div>
+            系統與帳號設定
+          </h1>
+          <p className="text-[var(--text-secondary)] text-sm">
             請在下方輸入您的憑證。此為本機開源專案，您的帳號密碼僅會儲存於瀏覽器本地 (`localStorage`)，不會保存在任何外部資料庫，確保您的個人資料隱私與安全性。
           </p>
         </div>
 
         {/* Settings Cards Wrapper */}
-        <div className="bg-surface/60 backdrop-blur-lg border border-border rounded-2xl p-6 sm:p-8 hover:border-emerald-500/30 hover:shadow-[0_0_25px_rgba(16,185,129,0.04)] transition-all duration-300 space-y-8 w-full">
+        <div className="card-glass p-6 md:p-8 space-y-8 w-full">
           
           {/* Garmin Section */}
           <div className="space-y-4">
@@ -213,7 +211,7 @@ export default function SettingsPage() {
           {/* Footer Save Button */}
           <div className="flex items-center gap-4 pt-6 border-t border-border w-full">
             <button 
-              className="flex-grow py-3.5 bg-emerald-400 hover:bg-emerald-350 active:scale-[0.98] text-[var(--text-primary)] font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition-all text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+              className="flex-grow py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl shadow-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300 ease-out active:scale-[0.98] text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
               onClick={handleSave}
               disabled={!isZonesValid}
             >

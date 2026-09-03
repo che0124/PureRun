@@ -104,7 +104,7 @@ export function generateWeeklyPlan(
 
   // 4. Allocate TSS buckets
   let longRunTss = targetWeeklyTss * 0.30;
-  let qualityTss = (phase === 'Base' || phase === 'Maintenance') ? 0 : targetWeeklyTss * 0.20;
+  const qualityTss = (phase === 'Base' || phase === 'Maintenance') ? 0 : targetWeeklyTss * 0.20;
   
   if (phase === 'Taper') {
     longRunTss = targetWeeklyTss * 0.20; // Reduce long run heavily during taper

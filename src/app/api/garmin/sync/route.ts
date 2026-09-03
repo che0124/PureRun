@@ -92,15 +92,78 @@ export async function POST(req: Request) {
         }
       });
 
-      // 如果不存在，進一步呼叫 Garmin API 下載 GPX 檔案並存入本地資料夾
-      if (!existing && act.source === 'Garmin') {
-        if (act.activityTypeKey !== 'indoor_running' && act.activityTypeKey !== 'treadmill_running') {
-          try {
-            // 下載 GPX 檔案
-            const gcClient = new GarminConnect({ username: garminEmail, password: garminPassword });
-            const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
-            await gcClient.loadTokenByFile(tokenFile);
+      let routeDataStr: string | null = act.routeData || (existing?.routeData ?? null);
+      let metricsDataStr: string | null = existing?.metricsData ?? null;
+
+      // 如果不存在，或是已存在但缺少詳細資料，進一步呼叫 Garmin API 取得詳細資料 (軌跡、Metrics) 與 GPX
+      const needsDetails = !existing 
+        || (!existing.routeData && act.activityTypeKey !== 'indoor_running' && act.activityTypeKey !== 'treadmill_running') 
+        || !existing.metricsData
+        || existing.metricsData.includes('"pace":null');
+
+      if (needsDetails && act.source === 'Garmin') {
+        try {
+          const gcClient = new GarminConnect({ username: garminEmail, password: garminPassword });
+          const tokenFile = path.join(os.tmpdir(), 'purerun-garmin-token.json');
+          await gcClient.loadTokenByFile(tokenFile);
+          
+          // 取得詳細資訊 (包含 Metrics 與 Polyline)
+          const details = await gcClient.get(`https://connectapi.garmin.com/activity-service/activity/${act.activityId}/details`);
+          
+          if (details) {
+            // 處理軌跡 (Polyline)
+            if (details.geoPolylineDTO && details.geoPolylineDTO.polyline) {
+               
+              const points = details.geoPolylineDTO.polyline
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .filter((p: any) => p.lat && p.lon)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .map((p: any) => [p.lat, p.lon]);
+              if (points.length > 0) {
+                routeDataStr = JSON.stringify(points);
+              }
+            }
             
+            // 處理 Metrics (HR, Pace, Cadence)
+            if (details.metricDescriptors && details.activityDetailMetrics) {
+              const desc = details.metricDescriptors;
+              
+              // DEBUG: 寫出 descriptors 到檔案以確認欄位名稱
+              try {
+                fs.writeFile(path.join(process.cwd(), 'scratch', 'metrics_debug.json'), JSON.stringify(desc, null, 2));
+              } catch (e) {}
+
+              const getIndex = (keys: string[]) => {
+                const idx = desc.findIndex((d: any) => keys.includes(d.key));
+                if (idx >= 0 && typeof desc[idx].metricsIndex === 'number') {
+                  return desc[idx].metricsIndex;
+                }
+                return idx;
+              };
+
+              const idxHr = getIndex(['directHeartRate']);
+              const idxSpeed = getIndex(['directSpeed', 'enhancedSpeed', 'speed']);
+              const idxElev = getIndex(['directElevation', 'directUncorrectedElevation', 'elevation', 'enhancedAltitude']);
+              const idxCadence = getIndex(['directRunCadence', 'directDoubleCadence', 'cadence', 'runCadence']);
+              
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const metrics = details.activityDetailMetrics.map((m: any, i: number) => {
+                 const vals = m.metrics;
+                 return {
+                   time: `${i}`,
+                   hr: idxHr >= 0 ? vals[idxHr] : null,
+                   pace: idxSpeed >= 0 && vals[idxSpeed] > 0 ? (1000 / 60 / vals[idxSpeed]) : null,
+                   elevation: idxElev >= 0 ? vals[idxElev] : null,
+                   cadence: idxCadence >= 0 ? vals[idxCadence] : null
+                 };
+              });
+              metricsDataStr = JSON.stringify(metrics);
+            }
+          }
+
+          if (act.activityTypeKey !== 'indoor_running' && act.activityTypeKey !== 'treadmill_running') {
+            // 下載 GPX 檔案之前稍作延遲避免頻繁請求
+            await new Promise(r => setTimeout(r, 1000));
             const gpxData = await gcClient.get(`https://connectapi.garmin.com/download-service/export/gpx/activity/${act.activityId}`);
             const gpxPath = path.join(gpxDir, `${act.activityId}.gpx`);
             
@@ -109,9 +172,9 @@ export async function POST(req: Request) {
             } else if (typeof gpxData === 'object') {
               await fs.writeFile(gpxPath, JSON.stringify(gpxData));
             }
-          } catch (error: unknown) {
-            console.error(`Failed to download GPX for activity ${act.activityId}:`, error instanceof Error ? error.message : String(error));
           }
+        } catch (error: unknown) {
+          console.error(`Failed to fetch details/GPX for activity ${act.activityId}:`, error instanceof Error ? error.message : String(error));
         }
       }
 
@@ -122,7 +185,10 @@ export async function POST(req: Request) {
         },
         update: {
           activityName: act.activityName,
+          date: new Date(act.date),
           // 如果只需要更新摘要可在此處加入更多欄位，若已存在則不修改原始歷史資料
+          routeData: routeDataStr || undefined,
+          metricsData: metricsDataStr || undefined,
         },
         create: {
           deviceId,
@@ -143,7 +209,8 @@ export async function POST(req: Request) {
           cadence:         act.cadence,
           strideLength:    act.strideLength,
           trainingEffect:  act.trainingEffect,
-          routeData:       act.routeData || null,
+          routeData:       routeDataStr,
+          metricsData:     metricsDataStr,
         }
       });
 
@@ -219,7 +286,7 @@ export async function POST(req: Request) {
       // 在已同步的活動中尋找同一天的跑步記錄
       const match = allActivities.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (act: any) => act.date === w.date && act.activityTypeKey.includes('running')
+        (act: any) => act.date.toISOString().split('T')[0] === w.date && act.activityTypeKey.includes('running')
       );
 
       if (match) {

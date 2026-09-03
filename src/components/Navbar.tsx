@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import SyncGarminButton from './SyncGarminButton';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -12,17 +13,15 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 bg-background/80 backdrop-blur-xl border-b border-border z-40 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] transition-all">
-            <span className="text-white font-mono font-bold text-sm">PR</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-[var(--text-primary)] text-lg tracking-wide leading-none group-hover:text-[var(--text-accent)] transition-colors">
-              PureRun<span className="text-emerald-450">_</span>AI
-            </span>
-            <span className="font-mono text-[9px] text-emerald-455/70 tracking-[0.2em] uppercase mt-0.5">
-              Sync. Analyze. Evolve.
-            </span>
+        <Link href="/" className="flex items-center group py-1">
+          <div className="relative h-7 w-36">
+            <Image
+              src="/logo-text-two-tone.png"
+              alt="PureRun"
+              fill
+              className="object-contain object-left"
+              priority
+            />
           </div>
         </Link>
 

@@ -10,6 +10,7 @@ import {
   Heart,
   Activity
 } from 'lucide-react';
+import { formatDurationHHMMSS } from '@/lib/formatters';
 
 export interface Workout {
   date: string;
@@ -88,10 +89,10 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
 
   return (
     <div className="w-full flex flex-col gap-4 animate-fade-up">
-      {/* Horizontal Swipeable Timeline */}
+      {/* Mobile: Vertical List, Desktop: Horizontal Swipeable Timeline */}
       <div 
         ref={scrollContainerRef}
-        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-6 pt-2 px-2 scrollbar-hide -mx-4 sm:mx-0 sm:px-0"
+        className="flex flex-col sm:flex-row sm:overflow-x-auto sm:snap-x sm:snap-mandatory gap-4 pb-6 pt-2 sm:px-2 scrollbar-hide"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {days.map((date) => {
@@ -104,7 +105,7 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
             <div 
               key={dateStr}
               data-is-today={isToday}
-              className={`snap-center shrink-0 w-[260px] sm:w-[280px] rounded-3xl border flex flex-col p-5 transition-all duration-300 relative overflow-hidden ${
+              className={`sm:snap-center shrink-0 w-full sm:w-[280px] min-h-[160px] rounded-[1.5rem] border flex flex-col p-6 transition-all duration-300 relative overflow-hidden ${
                 workout ? 'bg-surface/80 backdrop-blur-xl border-border hover:-translate-y-1 hover:shadow-2xl' : 'bg-background/40 border-border opacity-60'
               } ${isToday && !workout ? 'border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''} ${style ? style.glow : ''}`}
             >
@@ -174,15 +175,18 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
       {selectedWorkout && (
         <div className="fixed inset-0 bg-background/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-300">
           <div className="bg-surface border-t sm:border border-border w-full max-w-md sm:rounded-3xl rounded-t-3xl shadow-2xl relative animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 duration-300 flex flex-col max-h-[90vh] sm:max-h-[85vh]">
-            <div className="flex justify-between items-center p-6 pb-4 shrink-0 border-b border-border">
-              <span className={`text-[10px] px-3 py-1 rounded-full border uppercase tracking-widest font-bold ${
+            <div className="flex justify-between items-center p-6 pb-4 shrink-0 border-b border-border relative">
+              {/* Mobile Drag Handle Indicator */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full sm:hidden" />
+              
+              <span className={`text-[10px] px-3 py-1 mt-2 sm:mt-0 rounded-full border uppercase tracking-widest font-bold ${
                 TYPE_STYLE[selectedWorkout.workout_type]?.bg
               } ${TYPE_STYLE[selectedWorkout.workout_type]?.text} ${TYPE_STYLE[selectedWorkout.workout_type]?.border}`}>
                 {TYPE_NAME_ZH[selectedWorkout.workout_type]}
               </span>
               <button 
                 onClick={() => setSelectedWorkout(null)} 
-                className="text-slate-450 hover:text-[var(--text-primary)] transition duration-200 w-8 h-8 flex items-center justify-center rounded-full bg-surface-hover hover:bg-[var(--input-bg)]"
+                className="text-slate-450 hover:text-[var(--text-primary)] transition duration-200 w-8 h-8 flex items-center justify-center rounded-full bg-surface-hover hover:bg-[var(--input-bg)] mt-2 sm:mt-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -261,7 +265,7 @@ export default function Calendar({ plan, onWorkoutClick }: CalendarProps) {
                       </div>
                       <div className="p-3 bg-background/40 border border-border rounded-xl text-center hover:border-emerald-500/30 transition-colors">
                         <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">訓練時間</span>
-                        <span className="text-base font-extrabold text-[var(--text-primary)] mt-1 block font-mono">{selectedWorkout.actual_duration ? Math.floor(selectedWorkout.actual_duration) : '--'} <span className="text-[10px] text-[var(--text-muted)] font-sans font-normal">min</span></span>
+                        <span className="text-base font-extrabold text-[var(--text-primary)] mt-1 block font-mono">{selectedWorkout.actual_duration ? formatDurationHHMMSS(selectedWorkout.actual_duration) : '--'}</span>
                       </div>
                       <div className="p-3 bg-background/40 border border-border rounded-xl text-center hover:border-emerald-500/30 transition-colors">
                         <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">平均心率</span>
