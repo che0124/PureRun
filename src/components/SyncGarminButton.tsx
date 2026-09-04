@@ -7,7 +7,15 @@ import { RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'no_creds' | 'timeout' | 'error';
 
-export default function SyncGarminButton() {
+interface SyncGarminButtonProps {
+  variant?: 'circular' | 'full' | 'pill';
+  className?: string;
+}
+
+export default function SyncGarminButton({
+  variant = 'circular',
+  className = ''
+}: SyncGarminButtonProps) {
   const [status, setStatus] = useState<SyncStatus>('idle');
   const router = useRouter();
 
@@ -53,77 +61,104 @@ export default function SyncGarminButton() {
     }
   };
 
-  const getButtonStyle = () => {
+  const getStatusColor = () => {
     switch (status) {
       case 'syncing':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse cursor-wait';
+        return 'bg-amber-500/15 text-amber-400 border-amber-500/30 animate-pulse cursor-wait';
       case 'success':
-        return 'bg-emerald-500/20 text-[var(--text-accent)] border-emerald-500/40';
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
       case 'no_creds':
       case 'timeout':
       case 'error':
         return 'bg-rose-500/15 text-rose-400 border-rose-500/35';
       default:
-        return 'bg-emerald-500/10 hover:bg-emerald-500/20 text-[var(--text-accent)] border-emerald-500/30 hover:border-emerald-500/50 cursor-pointer';
+        return 'bg-surface border-border text-[var(--text-secondary)] hover:text-[var(--text-accent)] hover:border-emerald-500/50 hover:bg-emerald-500/10 cursor-pointer';
     }
   };
 
-  const getButtonContent = () => {
+  const getStatusTitle = () => {
     switch (status) {
       case 'syncing':
-        return (
-          <div className="flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            <span className="hidden sm:inline">SYNCING...</span>
-          </div>
-        );
+        return '同步中...';
       case 'success':
-        return (
-          <div className="flex items-center gap-1.5">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-450" />
-            <span className="hidden sm:inline">SUCCESS</span>
-          </div>
-        );
+        return '同步成功！';
       case 'no_creds':
-        return (
-          <div className="flex items-center gap-1.5">
-            <XCircle className="w-3.5 h-3.5 text-rose-400" />
-            <span className="hidden sm:inline">NO CREDS</span>
-          </div>
-        );
+        return '請先於設定填寫憑證';
       case 'timeout':
-        return (
-          <div className="flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-rose-405" />
-            <span className="hidden sm:inline">TIMEOUT</span>
-          </div>
-        );
+        return '同步逾時，請重試';
       case 'error':
-        return (
-          <div className="flex items-center gap-1.5">
-            <XCircle className="w-3.5 h-3.5 text-rose-455" />
-            <span className="hidden sm:inline">SYNC ERR</span>
-          </div>
-        );
+        return '同步失敗，請檢查憑證';
       default:
-        return (
-          <div className="flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-            <span className="hidden sm:inline">SYNC</span>
-          </div>
-        );
+        return '同步 Garmin 數據';
     }
   };
 
+  if (variant === 'circular') {
+    return (
+      <button
+        type="button"
+        onClick={handleSync}
+        disabled={status === 'syncing'}
+        className={`relative group flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full border transition-all active:scale-95 shrink-0 ${getStatusColor()} ${className}`}
+        title={getStatusTitle()}
+        aria-label={getStatusTitle()}
+      >
+        {status === 'syncing' && <RefreshCw className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin text-amber-400" />}
+        {status === 'success' && <CheckCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-emerald-400" />}
+        {(status === 'no_creds' || status === 'error') && <XCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-rose-400" />}
+        {status === 'timeout' && <AlertCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-rose-400" />}
+        {status === 'idle' && (
+          <RefreshCw className="w-4 h-4 sm:w-4.5 sm:h-4.5 group-hover:rotate-180 transition-transform duration-500" />
+        )}
+      </button>
+    );
+  }
+
+  // Full or Pill variant for sidebar/dashboard
   return (
     <button
-      className={`relative group overflow-hidden px-3.5 py-1.5 font-mono font-bold rounded-xl border transition-all duration-300 disabled:opacity-50 text-[10px] tracking-wider uppercase select-none ${getButtonStyle()}`}
+      type="button"
+      className={`relative group overflow-hidden px-3.5 py-2 font-mono font-bold rounded-xl border transition-all duration-300 disabled:opacity-50 text-xs tracking-wider uppercase select-none w-full flex items-center justify-center gap-2 ${getStatusColor()} ${className}`}
       onClick={handleSync}
       disabled={status === 'syncing'}
-      title="同步 Garmin 數據"
+      title={getStatusTitle()}
     >
-      <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-emerald-450/10 to-transparent -translate-x-full group-hover:animate-glow-sweep pointer-events-none" />
-      {getButtonContent()}
+      {status === 'syncing' && (
+        <>
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span>SYNCING...</span>
+        </>
+      )}
+      {status === 'success' && (
+        <>
+          <CheckCircle className="w-4 h-4 text-emerald-400" />
+          <span>SUCCESS</span>
+        </>
+      )}
+      {status === 'no_creds' && (
+        <>
+          <XCircle className="w-4 h-4 text-rose-400" />
+          <span>NO CREDS</span>
+        </>
+      )}
+      {status === 'timeout' && (
+        <>
+          <AlertCircle className="w-4 h-4 text-rose-400" />
+          <span>TIMEOUT</span>
+        </>
+      )}
+      {status === 'error' && (
+        <>
+          <XCircle className="w-4 h-4 text-rose-400" />
+          <span>SYNC ERR</span>
+        </>
+      )}
+      {status === 'idle' && (
+        <>
+          <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+          <span>SYNC GARMIN</span>
+        </>
+      )}
     </button>
   );
 }

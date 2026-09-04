@@ -1,12 +1,14 @@
 'use client';
+import React from 'react';
 import dynamic from 'next/dynamic';
+import type { RealMapProps } from './RealMapVisualizer';
 
-const RealMapWrapper = dynamic(
+const DynamicMap = dynamic<RealMapProps>(
   () => import('./RealMapVisualizer'),
   { 
     ssr: false,
     loading: () => (
-      <div className="w-full h-[300px] md:h-[400px] rounded-2xl bg-background/80 border border-border flex items-center justify-center">
+      <div className="w-full h-full bg-background/80 border border-border flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
           <span className="text-xs font-mono text-[var(--text-muted)]">Loading Map Core...</span>
@@ -16,4 +18,7 @@ const RealMapWrapper = dynamic(
   }
 );
 
-export default RealMapWrapper;
+export default function RealMapWrapper(props: RealMapProps) {
+  return <DynamicMap {...props} />;
+}
+

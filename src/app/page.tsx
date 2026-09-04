@@ -323,20 +323,16 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:min-h-[460px]">
 
           {/* Card C: PMC Fitness Chart (Span 8) */}
-          <div className="lg:col-span-8 card-glass p-6 flex flex-col relative group h-full overflow-hidden min-h-[400px] lg:min-h-0">
-            <div className="flex flex-wrap items-center justify-between min-h-[32px] mb-4 gap-2 z-10 relative shrink-0">
+          <div className="lg:col-span-8 card-glass p-5 sm:p-6 flex flex-col relative group h-full overflow-hidden min-h-[420px] lg:min-h-0">
+            <div className="flex items-center justify-between min-h-[24px] mb-2.5 z-10 relative shrink-0">
               <div className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-500" /> 體能與疲勞 (PMC)
               </div>
-              <div className="flex items-center gap-4 text-sm font-mono font-bold">
-                <div className="flex items-center gap-2"><span className="text-neutral-500 text-[10px] tracking-wider">CTL</span> <span className="text-blue-400">{todayFitness?.ctl ?? '--'}</span></div>
-                <div className="flex items-center gap-2"><span className="text-neutral-500 text-[10px] tracking-wider">ATL</span> <span className="text-rose-400">{todayFitness?.atl ?? '--'}</span></div>
-                <div className="flex items-center gap-2"><span className="text-neutral-500 text-[10px] tracking-wider">TSB</span> <span className={(todayFitness?.tsb ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400'}>{todayFitness?.tsb ?? '--'}</span></div>
-              </div>
             </div>
+
             <div className="flex-1 w-full relative min-h-0 -mx-2">
-              <div className="absolute inset-0 pb-2">
-                <FitnessTrendChart data={fitnessData} />
+              <div className="absolute inset-0 pb-1">
+                <FitnessTrendChart data={fitnessData} todayFitness={todayFitness} />
               </div>
             </div>
           </div>

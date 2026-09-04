@@ -101,6 +101,14 @@
   }
 }
 
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* 現代化 Glass 卡片 - 支援深色微光 */
 @utility card-glass {
   background-color: color-mix(in srgb, var(--bg-surface) 75%, transparent);

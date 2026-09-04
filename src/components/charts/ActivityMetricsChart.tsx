@@ -42,11 +42,15 @@ export default function ActivityMetricsChart({ data }: Props) {
               tooltipHtml += `<div>${param.marker} ${seriesName}: --</div>`;
               return;
             }
-            if (seriesName === 'Pace') {
+            if (seriesName === '配速' || seriesName === 'Pace') {
               const mins = Math.floor(val);
               const secs = Math.floor((val - mins) * 60);
               val = `${mins}:${secs.toString().padStart(2, '0')}`;
-            } else if (seriesName === 'Elevation' || seriesName === 'Cadence' || seriesName === 'Heart Rate') {
+            } else if (
+              seriesName === '海拔' || seriesName === 'Elevation' ||
+              seriesName === '步頻' || seriesName === 'Cadence' ||
+              seriesName === '心率' || seriesName === 'Heart Rate'
+            ) {
               val = Math.round(val);
             }
             tooltipHtml += `<div>${param.marker} ${seriesName}: <b>${val}</b></div>`;
@@ -54,19 +58,43 @@ export default function ActivityMetricsChart({ data }: Props) {
           return tooltipHtml;
         }
       },
+      title: [
+        {
+          text: '配速 (min/km)',
+          left: 36,
+          top: '1.5%',
+          textStyle: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }
+        },
+        {
+          text: '心率 (BPM)',
+          left: 36,
+          top: '26.5%',
+          textStyle: { color: '#ef4444', fontSize: 12, fontWeight: 'bold' }
+        },
+        {
+          text: '步頻 (SPM)',
+          left: 36,
+          top: '51.5%',
+          textStyle: { color: '#8b5cf6', fontSize: 12, fontWeight: 'bold' }
+        },
+        {
+          text: '海拔 (m)',
+          left: 36,
+          top: '76.5%',
+          textStyle: { color: '#10b981', fontSize: 12, fontWeight: 'bold' }
+        }
+      ],
       legend: {
-        data: ['Pace', 'Heart Rate', 'Cadence', 'Elevation'],
-        top: 0,
-        textStyle: { color: theme.subtextColor },
+        show: false,
       },
       axisPointer: {
         link: [{ xAxisIndex: 'all' }],
       },
       grid: [
-        { left: 50, right: 20, top: '6%', height: '18%', containLabel: false },
-        { left: 50, right: 20, top: '29%', height: '18%', containLabel: false },
-        { left: 50, right: 20, top: '52%', height: '18%', containLabel: false },
-        { left: 50, right: 20, top: '75%', height: '18%', containLabel: false }
+        { left: 36, right: 8, top: '5.5%', height: '17%', containLabel: false },
+        { left: 36, right: 8, top: '30.5%', height: '17%', containLabel: false },
+        { left: 36, right: 8, top: '55.5%', height: '17%', containLabel: false },
+        { left: 36, right: 8, top: '80.5%', height: '15%', containLabel: false }
       ],
       xAxis: [
         {
@@ -101,8 +129,6 @@ export default function ActivityMetricsChart({ data }: Props) {
       yAxis: [
         {
           type: 'value',
-          name: 'Pace',
-          nameLocation: 'start',
           gridIndex: 0,
           position: 'left',
           inverse: true,
@@ -129,7 +155,6 @@ export default function ActivityMetricsChart({ data }: Props) {
         },
         {
           type: 'value',
-          name: 'BPM',
           gridIndex: 1,
           position: 'left',
           axisLine: { show: true, lineStyle: { color: '#ef4444' } },
@@ -144,7 +169,6 @@ export default function ActivityMetricsChart({ data }: Props) {
         },
         {
           type: 'value',
-          name: 'SPM',
           gridIndex: 2,
           position: 'left',
           axisLine: { show: true, lineStyle: { color: '#8b5cf6' } }, // purple for cadence
@@ -162,7 +186,6 @@ export default function ActivityMetricsChart({ data }: Props) {
         },
         {
           type: 'value',
-          name: 'Elev',
           gridIndex: 3,
           position: 'left', // Keep all axes on the left for uniform alignment
           axisLine: { show: true, lineStyle: { color: '#10b981' } },
@@ -181,7 +204,7 @@ export default function ActivityMetricsChart({ data }: Props) {
       ],
       series: [
         {
-          name: 'Pace',
+          name: '配速',
           type: 'line',
           xAxisIndex: 0,
           yAxisIndex: 0,
@@ -191,7 +214,7 @@ export default function ActivityMetricsChart({ data }: Props) {
           data: paceData,
         },
         {
-          name: 'Heart Rate',
+          name: '心率',
           type: 'line',
           xAxisIndex: 1,
           yAxisIndex: 1,
@@ -201,7 +224,7 @@ export default function ActivityMetricsChart({ data }: Props) {
           data: hrData,
         },
         {
-          name: 'Cadence',
+          name: '步頻',
           type: 'line',
           xAxisIndex: 2,
           yAxisIndex: 2,
@@ -211,7 +234,7 @@ export default function ActivityMetricsChart({ data }: Props) {
           data: cadenceData,
         },
         {
-          name: 'Elevation',
+          name: '海拔',
           type: 'line',
           xAxisIndex: 3,
           yAxisIndex: 3,
@@ -228,13 +251,13 @@ export default function ActivityMetricsChart({ data }: Props) {
 
   if (!data || data.length === 0) return null;
 
-    return (
-      <div className="group card-glass p-4 md:p-6 w-full overflow-hidden h-[800px] md:h-[1000px] lg:h-[1200px] transition-all duration-300 ease-out">
-        <ReactECharts 
-          option={options} 
-          className="w-full h-full" 
-          style={{ width: '100%', height: '100%' }} 
-        />
-      </div>
-    );
+  return (
+    <div className="w-full overflow-hidden h-[700px] sm:h-[850px] md:h-[1000px]">
+      <ReactECharts 
+        option={options} 
+        className="w-full h-full" 
+        style={{ width: '100%', height: '100%' }} 
+      />
+    </div>
+  );
 }

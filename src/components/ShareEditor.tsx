@@ -1,7 +1,17 @@
 'use client';
 
-import React, { useRef, useState, useMemo } from 'react';
-import { ArrowLeft, Download, Image as ImageIcon, Route, Timer, Activity, Type } from 'lucide-react';
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import {
+  ArrowLeft,
+  Share2,
+  Route,
+  Timer,
+  Activity,
+  Sparkles,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import Link from 'next/link';
 
@@ -18,101 +28,448 @@ interface ActivityData {
   routeData: string | null;
 }
 
+function project(lat: number, lng: number) {
+  const sinY = Math.sin((lat * Math.PI) / 180);
+  const clampedSinY = Math.min(Math.max(sinY, -0.9999), 0.9999);
+  const x = (lng + 180) / 360;
+  const y = 0.5 - Math.log((1 + clampedSinY) / (1 - clampedSinY)) / (4 * Math.PI);
+  return { x, y };
+}
+
+function MapRouteView({
+  routeStr,
+  className,
+  showMarkers = false,
+  showWhiteOutline = false,
+  paddingTop = 6,
+  paddingBottom = 72,
+  paddingX = 6,
+}: {
+  routeStr: string | null;
+  className?: string;
+  showMarkers?: boolean;
+  showWhiteOutline?: boolean;
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingX?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 320, height: 320 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        if (clientWidth > 0 && clientHeight > 0) {
+          setContainerSize({ width: clientWidth, height: clientHeight });
+        }
+      }
+    };
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const mapData = useMemo(() => {
+    if (!routeStr) return null;
+    try {
+      const rawPoints = JSON.parse(routeStr) as [number, number][];
+      if (!Array.isArray(rawPoints) || rawPoints.length < 2) return null;
+
+      const validPoints = rawPoints.filter(p => Array.isArray(p) && p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1]));
+      if (validPoints.length < 2) return null;
+
+      const normPoints = validPoints.map(([lat, lon]) => project(lat, lon));
+      const minX = Math.min(...normPoints.map(p => p.x));
+      const maxX = Math.max(...normPoints.map(p => p.x));
+      const minY = Math.min(...normPoints.map(p => p.y));
+      const maxY = Math.max(...normPoints.map(p => p.y));
+
+      const { width, height } = containerSize;
+      const availW = Math.max(width - paddingX * 2, 20);
+      const availH = Math.max(height - paddingTop - paddingBottom, 20);
+
+      const spanX = Math.max(maxX - minX, 0.000001);
+      const spanY = Math.max(maxY - minY, 0.000001);
+
+      const rawZoomX = Math.log2(availW / (spanX * 256));
+      const rawZoomY = Math.log2(availH / (spanY * 256));
+      const exactZoom = Math.min(rawZoomX, rawZoomY);
+      const baseZoom = Math.max(1, Math.min(18, Math.floor(exactZoom)));
+      const scale = 2 ** (exactZoom - baseZoom);
+
+      const worldSize = 256 * (2 ** baseZoom) * scale;
+      const centerNormX = (minX + maxX) / 2;
+      const centerNormY = (minY + maxY) / 2;
+
+      const screenCenterX = paddingX + availW / 2;
+      const screenCenterY = paddingTop + availH / 2;
+
+      const numTilesWorld = 2 ** baseZoom;
+      const tileSize = 256 * scale;
+
+      const minTileX = Math.floor(((0 - screenCenterX) / worldSize + centerNormX) * numTilesWorld);
+      const maxTileX = Math.floor(((width - screenCenterX) / worldSize + centerNormX) * numTilesWorld);
+      const minTileY = Math.floor(((0 - screenCenterY) / worldSize + centerNormY) * numTilesWorld);
+      const maxTileY = Math.floor(((height - screenCenterY) / worldSize + centerNormY) * numTilesWorld);
+
+      const tiles: { key: string; x: number; y: number; left: number; top: number; width: number; height: number; url: string }[] = [];
+
+      for (let ty = minTileY; ty <= maxTileY; ty++) {
+        if (ty < 0 || ty >= numTilesWorld) continue;
+        for (let tx = minTileX; tx <= maxTileX; tx++) {
+          const wrappedX = ((tx % numTilesWorld) + numTilesWorld) % numTilesWorld;
+          const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/${baseZoom}/${ty}/${wrappedX}`;
+          const left = (tx / numTilesWorld - centerNormX) * worldSize + screenCenterX;
+          const top = (ty / numTilesWorld - centerNormY) * worldSize + screenCenterY;
+          tiles.push({
+            key: `${baseZoom}-${tx}-${ty}`,
+            x: tx,
+            y: ty,
+            left,
+            top,
+            width: Math.ceil(tileSize) + 1,
+            height: Math.ceil(tileSize) + 1,
+            url,
+          });
+        }
+      }
+
+      const pixelPoints = normPoints.map(p => ({
+        x: (p.x - centerNormX) * worldSize + screenCenterX,
+        y: (p.y - centerNormY) * worldSize + screenCenterY,
+      }));
+
+      const svgPath = pixelPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+
+      const startPt = pixelPoints[0];
+      const endPt = pixelPoints[pixelPoints.length - 1];
+
+      return {
+        tiles,
+        svgPath,
+        startPt,
+        endPt,
+        width,
+        height,
+      };
+    } catch {
+      return null;
+    }
+  }, [routeStr, containerSize, paddingTop, paddingBottom, paddingX]);
+
+  if (!routeStr || !mapData) {
+    return (
+      <div ref={containerRef} className={`w-full h-full min-h-[160px] bg-neutral-900/90 flex flex-col items-center justify-center gap-2 p-4 text-center ${className || ''}`}>
+        <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="w-12 h-12 object-contain opacity-50" />
+        <span className="text-[11px] font-bold text-neutral-400">無 GPS 軌跡資料</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className={`relative w-full h-full overflow-hidden bg-[#f4f4f5] select-none ${className || ''}`}>
+      {/* Map Tiles Layer (ArcGIS World Topo Map) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        {mapData.tiles.map(tile => (
+          <img
+            key={tile.key}
+            src={tile.url}
+            alt=""
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+            className="absolute max-w-none"
+            style={{
+              left: `${tile.left}px`,
+              top: `${tile.top}px`,
+              width: `${tile.width}px`,
+              height: `${tile.height}px`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* SVG Polyline Layer */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none z-10"
+        viewBox={`0 0 ${mapData.width} ${mapData.height}`}
+      >
+        {/* Route outer shadow / subtle depth */}
+        <path
+          d={mapData.svgPath}
+          fill="none"
+          stroke="#065f46"
+          strokeWidth="4"
+          strokeOpacity="0.3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* Optional High contrast white outline */}
+        {showWhiteOutline && (
+          <path
+            d={mapData.svgPath}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="3.5"
+            strokeOpacity="0.85"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {/* Main Emerald route line */}
+        <path
+          d={mapData.svgPath}
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="2.5"
+          strokeOpacity="0.98"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Start Marker (起) */}
+        {showMarkers && mapData.startPt && (
+          <g transform={`translate(${mapData.startPt.x}, ${mapData.startPt.y})`}>
+            <circle r="11" fill="#3b82f6" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.6))" />
+            <circle r="10" fill="#3b82f6" stroke="#ffffff" strokeWidth="2.5" />
+            <text
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#ffffff"
+              fontSize="9"
+              fontWeight="900"
+              fontFamily="system-ui, -apple-system, sans-serif"
+            >
+              起
+            </text>
+          </g>
+        )}
+
+        {/* Finish Marker (終) */}
+        {showMarkers && mapData.endPt && (
+          <g transform={`translate(${mapData.endPt.x}, ${mapData.endPt.y})`}>
+            <circle r="11" fill="#ef4444" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.6))" />
+            <circle r="10" fill="#ef4444" stroke="#ffffff" strokeWidth="2.5" />
+            <text
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#ffffff"
+              fontSize="9"
+              fontWeight="900"
+              fontFamily="system-ui, -apple-system, sans-serif"
+            >
+              終
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 function RouteSvg({ routeStr, className }: { routeStr: string | null; className?: string }) {
-  const pathData = useMemo(() => {
+  const routeGeometry = useMemo(() => {
     if (!routeStr) return null;
     try {
       const points = JSON.parse(routeStr) as [number, number][];
       if (!points || points.length === 0) return null;
 
-      // 計算中心緯度，用以校正經度 (球體投影在小範圍內的平面近似)
       const lats = points.map(p => p[0]);
       const rawCy = (Math.min(...lats) + Math.max(...lats)) / 2;
       const cosLat = Math.cos((rawCy * Math.PI) / 180);
 
-      // 經度依緯度縮放
-      const projLons = points.map(p => p[1] * cosLat);
-      
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLon = Math.min(...projLons);
-      const maxLon = Math.max(...projLons);
-      
-      const dx = maxLon - minLon || 0.0001;
-      const dy = maxLat - minLat || 0.0001;
-      
-      const scale = 100 / Math.max(dx, dy);
-      const cx = (minLon + maxLon) / 2;
-      const cy = (minLat + maxLat) / 2;
-      
-      return points.map((p, i) => {
-        // x 軸使用校正後的經度
-        const x = 50 + ((p[1] * cosLat) - cx) * scale;
-        const y = 50 - (p[0] - cy) * scale;
-        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      const projPoints = points.map(([lat, lon]) => ({
+        x: lon * cosLat,
+        y: -lat,
+      }));
+
+      const xs = projPoints.map(p => p.x);
+      const ys = projPoints.map(p => p.y);
+
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+
+      const rawW = maxX - minX || 0.0001;
+      const rawH = maxY - minY || 0.0001;
+
+      // Small uniform 6% margin so strokes are never clipped
+      const paddingX = rawW * 0.06;
+      const paddingY = rawH * 0.06;
+      const paddedMinX = minX - paddingX;
+      const paddedMinY = minY - paddingY;
+      const paddedW = rawW + paddingX * 2;
+      const paddedH = rawH + paddingY * 2;
+
+      const pathData = projPoints.map((p, i) => {
+        const x = p.x - paddedMinX;
+        const y = p.y - paddedMinY;
+        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(6)} ${y.toFixed(6)}`;
       }).join(' ');
+
+      return {
+        pathData,
+        viewBox: `0 0 ${paddedW.toFixed(6)} ${paddedH.toFixed(6)}`,
+      };
     } catch {
       return null;
     }
   }, [routeStr]);
 
-  if (!pathData) return null;
+  if (!routeGeometry) return null;
 
   return (
-    <svg viewBox="-5 -5 110 110" className={className} preserveAspectRatio="xMidYMid meet" style={{ filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.5))' }}>
-      <path d={pathData} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox={routeGeometry.viewBox}
+      className={className}
+      style={{ filter: 'drop-shadow(0px 3px 6px rgba(0,0,0,0.6))' }}
+    >
+      <path
+        d={routeGeometry.pathData}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        vectorEffect="non-scaling-stroke"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 export default function ShareEditor({ activity }: { activity: ActivityData }) {
-  const [bgImage, setBgImage] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<'9:16' | '1:1' | 'sticker'>('1:1');
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  
-  const fullCaptureRef = useRef<HTMLDivElement>(null);
-  const overlayCaptureRef = useRef<HTMLDivElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setBgImage(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const card1Ref = useRef<HTMLDivElement>(null);
+  const card2Ref = useRef<HTMLDivElement>(null);
+  const card3Ref = useRef<HTMLDivElement>(null);
+  const card4Ref = useRef<HTMLDivElement>(null);
+
+  const cardRefs = useMemo(() => [card1Ref, card2Ref, card3Ref, card4Ref], []);
+
+  const templates = useMemo(() => [
+    { id: 'story', label: '9:16 限動' },
+    { id: 'sticker', label: '軌跡貼紙' },
+    { id: 'overlay', label: '疊加貼紙' },
+    { id: 'classic', label: '1:1 經典' },
+  ], []);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
+
+  const scrollToCard = useCallback((index: number) => {
+    const clampedIndex = Math.max(0, Math.min(templates.length - 1, index));
+    setActiveIndex(clampedIndex);
+    if (!carouselRef.current) return;
+    const container = carouselRef.current;
+    const targetChild = container.children[clampedIndex] as HTMLElement;
+    if (targetChild) {
+      const targetLeft = targetChild.offsetLeft - (container.clientWidth - targetChild.offsetWidth) / 2;
+      container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
+  }, [templates.length]);
+
+  const handleCarouselScroll = () => {
+    if (!carouselRef.current) return;
+    const container = carouselRef.current;
+    const scrollLeft = container.scrollLeft;
+    const containerCenter = scrollLeft + container.clientWidth / 2;
+    const children = Array.from(container.children) as HTMLElement[];
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    children.forEach((child, index) => {
+      const childCenter = child.offsetLeft + child.offsetWidth / 2;
+      const distance = Math.abs(containerCenter - childCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    if (closestIndex !== activeIndex) {
+      setActiveIndex(closestIndex);
     }
   };
 
-  const handleDownload = async (transparentOnly: boolean) => {
-    const targetRef = transparentOnly ? overlayCaptureRef : fullCaptureRef;
-    if (!targetRef.current) return;
-    
+  // Keyboard navigation (Arrow keys) and Window resize recentering
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        scrollToCard(activeIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        scrollToCard(activeIndex + 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    const handleResize = () => {
+      scrollToCard(activeIndex);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [activeIndex, scrollToCard]);
+
+  const handleShareOrDownload = async () => {
+    const targetRef = cardRefs[activeIndex];
+    if (!targetRef?.current) return;
+
     setIsGenerating(true);
     setErrorMsg('');
 
     try {
-      await new Promise(res => setTimeout(res, 500));
-      
-      // Always use PNG to support transparency
-      const dataUrl = await htmlToImage.toPng(targetRef.current, {
+      await new Promise(res => setTimeout(res, 350));
+
+      const blob = await htmlToImage.toBlob(targetRef.current, {
         quality: 1,
         cacheBust: true,
-        pixelRatio: 3, 
+        pixelRatio: 3,
         skipAutoScale: true,
       });
-      
+
+      if (!blob) throw new Error('圖片轉換失敗');
+
+      const currentTemplateId = templates[activeIndex].id;
+      const fileName = `purerun-${activity.id}-${currentTemplateId}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `PureRun - ${activity.name}`,
+            text: `🏃 總距離 ${activity.distanceKm} km · 平均配速 ${activity.avgPaceStr || '--'}/km`,
+          });
+          showToast('🎉 分享成功！');
+          return;
+        } catch (shareErr: any) {
+          if (shareErr.name === 'AbortError') return;
+        }
+      }
+
+      const dataUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const prefix = transparentOnly ? 'overlay' : 'share';
-      link.download = `purerun-${activity.id}-${prefix}.png`;
+      link.download = fileName;
       link.href = dataUrl;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+      showToast('📥 圖片已下載至裝置相簿/檔案');
     } catch (err) {
       console.error('Error generating image', err);
-      setErrorMsg('生成圖片失敗，請再試一次。');
+      setErrorMsg('圖片生成失敗，請再試一次');
     } finally {
       setIsGenerating(false);
     }
@@ -129,261 +486,428 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
-    if (h > 0) {
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return h > 0
+      ? `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+      : `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Common text shadow to ensure visibility on any background without a container box
-  const textShadowStyle = { textShadow: '0px 2px 8px rgba(0,0,0,0.7)' };
-  
-  // Dimensions
-  const width = aspectRatio === '9:16' ? '360px' : '480px';
-  const height = aspectRatio === '9:16' ? '640px' : aspectRatio === 'sticker' ? '400px' : '480px';
+  const textShadowStyle = { textShadow: '0px 2px 8px rgba(0,0,0,0.85)' };
+
+  // Authentic PNG checkered background pattern for transparent preview
+  const checkerboardStyle: React.CSSProperties = {
+    backgroundColor: '#121214',
+    backgroundImage: `
+      linear-gradient(45deg, #1f1f23 25%, transparent 25%),
+      linear-gradient(-45deg, #1f1f23 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1f1f23 75%),
+      linear-gradient(-45deg, transparent 75%, #1f1f23 75%)
+    `,
+    backgroundSize: '16px 16px',
+    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+  };
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-[var(--text-primary)] font-sans pb-20">
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/60">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <Link href={`/activity/${activity.id}`} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-accent)] transition-colors shrink-0">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-bold text-sm">返回紀錄</span>
-          </Link>
-          <div className="flex flex-wrap items-center gap-2 md:gap-4">
-            <label className="cursor-pointer flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-surface border border-border rounded-xl text-sm font-bold hover:bg-surface-hover transition-colors">
-              <ImageIcon className="w-4 h-4" />
-              <span>照片背景</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            </label>
-            <button
-              onClick={() => handleDownload(true)}
-              disabled={isGenerating}
-              className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-zinc-800 text-white rounded-xl text-sm font-bold hover:bg-zinc-700 transition-colors disabled:opacity-50"
-            >
-              {isGenerating ? '...' : <><Type className="w-4 h-4" /> 去背浮水印</>}
-            </button>
-            <button
-              onClick={() => handleDownload(false)}
-              disabled={isGenerating}
-              className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50"
-            >
-              {isGenerating ? '生成中...' : <><Download className="w-4 h-4" /> 完整圖片</>}
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="fixed inset-0 h-[100dvh] z-[60] bg-neutral-950 text-[var(--text-primary)] font-sans flex flex-col justify-between select-none overflow-hidden">
 
-      {errorMsg && (
-        <div className="max-w-4xl mx-auto px-4 mt-4">
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-lg text-sm">{errorMsg}</div>
+      {/* Top Header */}
+      <header className="h-16 bg-neutral-950/90 backdrop-blur-xl border-b border-border/60 shrink-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+          <Link
+            href={`/activity/${activity.id}`}
+            className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center group-hover:border-emerald-500/50 group-hover:bg-emerald-500/10 transition-all">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
+          </Link>
+
+          <div className="text-sm sm:text-base font-bold text-neutral-200">
+            分享活動
+          </div>
+
+          {/* Spacer to balance the back button on the left for centering */}
+          <div className="w-8 sm:w-28" />
+        </div>
+      </header>
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none">
+          <div className="px-4 py-1.5 bg-emerald-500 text-white text-xs sm:text-sm font-bold rounded-full shadow-2xl flex items-center gap-2 border border-emerald-400/40 backdrop-blur-md pointer-events-auto">
+            <Check className="w-4 h-4" />
+            <span>{toastMsg}</span>
+          </div>
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 mt-8 flex flex-col md:flex-row gap-8 items-start">
-        {/* Editor Sidebar */}
-        <div className="w-full md:w-64 shrink-0 space-y-6">
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider">選擇版型</h3>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setAspectRatio('1:1')}
-                className={`py-2 px-4 text-sm font-bold border rounded-lg transition-colors text-left ${aspectRatio === '1:1' ? 'bg-emerald-500/10 border-emerald-500 text-[var(--text-accent)]' : 'border-border text-[var(--text-secondary)] hover:bg-surface-hover'}`}
-              >
-                方型排版 (1:1)
-              </button>
-              <button
-                onClick={() => setAspectRatio('9:16')}
-                className={`py-2 px-4 text-sm font-bold border rounded-lg transition-colors text-left ${aspectRatio === '9:16' ? 'bg-emerald-500/10 border-emerald-500 text-[var(--text-accent)]' : 'border-border text-[var(--text-secondary)] hover:bg-surface-hover'}`}
-              >
-                限時動態 (9:16)
-              </button>
-              <button
-                onClick={() => setAspectRatio('sticker')}
-                className={`py-2 px-4 text-sm font-bold border rounded-lg transition-colors text-left flex items-center justify-between ${aspectRatio === 'sticker' ? 'bg-emerald-500/10 border-emerald-500 text-[var(--text-accent)]' : 'border-border text-[var(--text-secondary)] hover:bg-surface-hover'}`}
-              >
-                <span>純軌跡貼紙</span>
-              </button>
-            </div>
-          </div>
-          <div className="p-4 bg-surface rounded-xl border border-border text-sm text-[var(--text-secondary)] leading-relaxed space-y-2">
-            <p><strong>💡 匯出說明：</strong></p>
-            <ul className="list-disc list-inside space-y-1 ml-1 text-xs">
-              <li><strong>去背浮水印</strong>：只匯出文字與軌跡，不含背景圖片，可當作 IG 限動的疊加貼圖 (PNG)。</li>
-              <li><strong>完整圖片</strong>：包含您上傳的背景照片，一併合成匯出。</li>
-            </ul>
-          </div>
+      {/* Error Message */}
+      {errorMsg && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none">
+          <div className="p-2 bg-rose-500/90 text-white rounded-xl text-xs text-center font-bold shadow-lg pointer-events-auto">{errorMsg}</div>
         </div>
+      )}
 
-        {/* Preview Area */}
-        <div className="flex-1 flex justify-center w-full bg-zinc-900 md:p-8 p-4 rounded-2xl border border-border/50 overflow-hidden relative">
-          
-          {/* Full Capture Node (Includes Background) */}
+      {/* Carousel Area */}
+      <main className="relative flex-1 min-h-0 flex flex-col justify-center overflow-hidden py-1 sm:py-2">
+        {/* Desktop Navigation Arrows */}
+        <button
+          onClick={() => scrollToCard(activeIndex - 1)}
+          disabled={activeIndex === 0}
+          aria-label="Previous template"
+          className={`hidden sm:flex absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-neutral-900/90 border border-neutral-700/80 items-center justify-center text-neutral-200 hover:bg-neutral-800 hover:text-white transition-all shadow-xl active:scale-95 ${activeIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-80 hover:opacity-100'
+            }`}
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => scrollToCard(activeIndex + 1)}
+          disabled={activeIndex === templates.length - 1}
+          aria-label="Next template"
+          className={`hidden sm:flex absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-neutral-900/90 border border-neutral-700/80 items-center justify-center text-neutral-200 hover:bg-neutral-800 hover:text-white transition-all shadow-xl active:scale-95 ${activeIndex === templates.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-80 hover:opacity-100'
+            }`}
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        <div
+          ref={carouselRef}
+          onScroll={handleCarouselScroll}
+          className="w-full flex items-center gap-5 sm:gap-6 overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar scrollbar-hide py-1 sm:py-2 px-[calc(50vw-125px)] sm:px-[calc(50vw-115px)] md:px-[calc(50vw-120px)] touch-pan-x overscroll-none"
+          style={{ scrollBehavior: 'smooth', scrollbarWidth: 'none', msOverflowStyle: 'none', overscrollBehavior: 'none', touchAction: 'pan-x' }}
+        >
+          {/* Template 0: 9:16 限時動態 (9:16 Full-Bleed Map Story) */}
           <div
-            ref={fullCaptureRef}
-            className={`relative overflow-hidden mx-auto ${bgImage ? 'shadow-2xl' : 'shadow-[0_0_40px_rgba(0,0,0,0.3)]'}`}
-            style={{ width, height, backgroundColor: aspectRatio === 'sticker' ? 'transparent' : '#18181b' }}
+            onClick={() => scrollToCard(0)}
+            className={`snap-center shrink-0 transition-opacity duration-300 flex items-center justify-center ${activeIndex === 0 ? 'opacity-100' : 'opacity-40 hover:opacity-75 cursor-pointer'
+              }`}
           >
-            {/* Background Layer */}
-            <div className="absolute inset-0 z-0">
-              {bgImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={bgImage} alt="Background" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-transparent border-2 border-dashed border-zinc-400/50 flex items-center justify-center text-zinc-500 text-xs">
-                  (透明背景)
+            <div className="relative shadow-2xl overflow-hidden ring-1 ring-white/10 rounded-none">
+              <div
+                ref={card1Ref}
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] transition-all flex flex-col justify-between shadow-black bg-[#f4f4f5]"
+              >
+                {/* Full-bleed Map Layer */}
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                  <MapRouteView
+                    routeStr={activity.routeData}
+                    className="w-full h-full"
+                    showMarkers={false}
+                    showWhiteOutline={false}
+                    paddingTop={36}
+                    paddingBottom={105}
+                    paddingX={12}
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Overlay Capture Node (Only Text/SVG, Transparent Background) */}
-            <div 
-              ref={overlayCaptureRef} 
-              className="absolute inset-0 z-10 p-6 flex flex-col justify-between overflow-hidden bg-transparent"
-              style={{ width, height }}
-            >
-              
-              {/* Layout 1: Square Post (1:1) */}
-              {aspectRatio === '1:1' && (
-                <>
-                  <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20">
-                     <div className="flex items-center gap-1.5 text-emerald-400 font-bold tracking-tight shadow-sm drop-shadow-md">
-                        <Route className="w-5 h-5" />
-                        <span className="text-xl italic">PureRun</span>
-                     </div>
-                     <div className="text-white font-sans font-bold text-sm tracking-wide" style={textShadowStyle}>
-                        {formattedDate}
-                     </div>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 pt-24 pb-8 z-10">
-                    <div className="mb-2">
-                      <div className="flex items-baseline gap-1.5 text-white drop-shadow-md">
-                        <span className="text-7xl font-mono font-extrabold leading-none tracking-tighter">{activity.distanceKm}</span>
-                        <span className="text-2xl font-bold text-emerald-400">KM</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-6 mt-4 border-t border-white/20 pt-4">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
-                          <Timer className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Time</span>
-                        </div>
-                        <span className="text-xl font-mono font-bold text-white">{formatDuration(activity.durationMin)}</span>
-                      </div>
-                      
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
-                          <Route className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Pace</span>
-                        </div>
-                        <span className="text-xl font-mono font-bold text-white">{activity.avgPaceStr || '--'}/km</span>
-                      </div>
-
-                      {activity.calories && (
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
-                            <Activity className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Kcal</span>
-                          </div>
-                          <span className="text-xl font-mono font-bold text-white">{activity.calories}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Layout 2: Story (9:16) */}
-              {aspectRatio === '9:16' && (
-                <>
+                {/* Top Header Overlay with Dark Gradient */}
+                <div className="relative z-10 w-full p-3 sm:p-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                   <div className="flex justify-between items-start w-full">
-                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold tracking-tight shadow-sm drop-shadow-md">
-                      <Route className="w-5 h-5" />
-                      <span className="text-xl italic">PureRun</span>
+                    <div className="flex items-center gap-1.5 select-none">
+                      <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="h-3.5 sm:h-4 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <img src="/logo-text-two-tone.png" alt="PureRun" className="h-2.5 sm:h-3 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                     </div>
-                    <div className="text-white font-sans font-bold text-sm tracking-wide" style={textShadowStyle}>
+                    <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
                       {formattedDate}
                     </div>
                   </div>
+                </div>
 
-                  <div className="mb-4 w-full px-2 pb-6">
-                    <div className="mb-6">
-                      <span className="text-emerald-400 text-sm font-bold uppercase tracking-wider block mb-1" style={textShadowStyle}>Distance</span>
-                      <div className="flex items-baseline gap-1 text-white">
-                        <span className="text-8xl font-mono font-extrabold leading-none tracking-tighter" style={textShadowStyle}>{activity.distanceKm}</span>
-                        <span className="text-2xl font-bold" style={textShadowStyle}>km</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                      <div>
-                        <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1" style={textShadowStyle}><Timer className="w-3.5 h-3.5" /> Time</span>
-                        <div className="text-3xl font-mono font-bold text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</div>
-                      </div>
-                      <div>
-                        <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1" style={textShadowStyle}><Route className="w-3.5 h-3.5" /> Pace</span>
-                        <div className="text-3xl font-mono font-bold text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</div>
-                      </div>
-                      {activity.avgHr && (
-                        <div>
-                          <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1" style={textShadowStyle}><Activity className="w-3.5 h-3.5" /> HR</span>
-                          <div className="text-3xl font-mono font-bold text-white" style={textShadowStyle}>{activity.avgHr}</div>
-                        </div>
-                      )}
-                      {activity.calories && (
-                        <div>
-                          <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 mb-1" style={textShadowStyle}><Activity className="w-3.5 h-3.5" /> Calories</span>
-                          <div className="text-3xl font-mono font-bold text-white" style={textShadowStyle}>{activity.calories}</div>
-                        </div>
-                      )}
+                {/* Center / Spacer */}
+                <div className="flex-1" />
+
+                {/* Bottom Stats Overlay with Dark Gradient */}
+                <div className="relative z-10 w-full p-3 sm:p-3.5 pt-7 sm:pt-8 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                  <div className="mb-1 sm:mb-1.5">
+                    <span className="text-emerald-400 text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider block mb-0.5" style={textShadowStyle}>總距離</span>
+                    <div className="flex items-baseline gap-1 text-white" style={textShadowStyle}>
+                      <span className="text-3xl sm:text-4xl font-mono font-extrabold leading-none tracking-tight">{activity.distanceKm}</span>
+                      <span className="text-xs sm:text-sm font-bold text-emerald-400">km</span>
                     </div>
                   </div>
-                </>
-              )}
-
-              {/* Layout 3: Pure Route Sticker */}
-              {aspectRatio === 'sticker' && (
-                <div className="w-full h-full flex flex-col justify-center items-center gap-8 py-8">
-                  {/* Route Map */}
-                  {activity.routeData ? (
-                    <div className="w-48 h-48 md:w-56 md:h-56 text-emerald-400 relative">
-                       <RouteSvg routeStr={activity.routeData} className="w-full h-full" />
+                  <div className="grid grid-cols-2 gap-y-1 gap-x-2">
+                    <div>
+                      <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
+                        <Timer className="w-2.5 h-2.5" /> 配速
+                      </span>
+                      <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</div>
                     </div>
-                  ) : (
-                    <div className="text-white font-bold text-sm" style={textShadowStyle}>無 GPS 軌跡資料</div>
-                  )}
-                  
-                  {/* Clean Text Stats (No Background Box) */}
-                  <div className="flex items-center gap-6 text-white px-2">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1" style={textShadowStyle}>Dist</span>
-                      <div className="flex items-baseline gap-0.5">
-                        <span className="text-3xl font-mono font-extrabold" style={textShadowStyle}>{activity.distanceKm}</span>
+                    <div>
+                      <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
+                        <Route className="w-2.5 h-2.5" /> 時間
+                      </span>
+                      <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</div>
+                    </div>
+                    {activity.avgHr && (
+                      <div>
+                        <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
+                          <Activity className="w-2.5 h-2.5" /> 心率
+                        </span>
+                        <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.avgHr}</div>
                       </div>
+                    )}
+                    {activity.calories && (
+                      <div>
+                        <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
+                          <Sparkles className="w-2.5 h-2.5" /> 熱量
+                        </span>
+                        <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.calories}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Template 1: 軌跡貼紙 (Transparent Route Sticker) */}
+          <div
+            onClick={() => scrollToCard(1)}
+            className={`snap-center shrink-0 transition-opacity duration-300 flex items-center justify-center ${activeIndex === 1 ? 'opacity-100' : 'opacity-40 hover:opacity-75 cursor-pointer'
+              }`}
+          >
+            <div
+              className="relative shadow-2xl overflow-hidden ring-1 ring-white/10 rounded-none"
+              style={checkerboardStyle}
+            >
+              <div
+                ref={card2Ref}
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent"
+                style={{ backgroundColor: 'transparent' }}
+              >
+                {/* Center Route Trajectory / Shoe Graphic (Auto fallback to shoe if no route) */}
+                <div className="w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] max-h-[175px] sm:max-h-[160px] md:max-h-[170px] flex items-center justify-center shrink-0">
+                  {activity.routeData ? (
+                    <RouteSvg routeStr={activity.routeData} className="w-full h-auto max-h-[175px] sm:max-h-[160px] md:max-h-[170px] text-emerald-400" />
+                  ) : (
+                    <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2 animate-in fade-in zoom-in-95 duration-200">
+                      <img
+                        src="/logo-shoe-emerald.png"
+                        alt="PureRun Shoe"
+                        className="w-auto h-auto max-w-[130px] max-h-[130px] sm:max-w-[145px] sm:max-h-[145px] object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.4)]"
+                      />
                     </div>
-                    
-                    <div className="w-px h-10 bg-white/40 shadow-sm" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}></div>
-                    
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1" style={textShadowStyle}>Pace</span>
-                      <span className="text-3xl font-mono font-extrabold" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                  )}
+                </div>
+
+                {/* 3 Core Stats (極簡緊湊橫排，收納在軌跡圖寬度內) */}
+                <div className="w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] flex items-center justify-between text-white px-0.5">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>距離</span>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{activity.distanceKm}</span>
+                      <span className="text-[8px] sm:text-[8.5px] font-bold text-emerald-400">km</span>
                     </div>
-                    
-                    <div className="w-px h-10 bg-white/40 shadow-sm" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}></div>
-                    
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1" style={textShadowStyle}>Time</span>
-                      <span className="text-3xl font-mono font-extrabold" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                  </div>
+                  <div className="w-px h-3.5 bg-white/20"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>配速</span>
+                    <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                  </div>
+                  <div className="w-px h-3.5 bg-white/20"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>時間</span>
+                    <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                  </div>
+                </div>
+
+                {/* Two-tone PureRun Logo (數據下方) */}
+                <div className="flex items-center justify-center pt-0.5 select-none opacity-90">
+                  <img
+                    src="/logo-text-two-tone.png"
+                    alt="PureRun"
+                    className="h-2.5 sm:h-3 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Template 2: 疊加貼紙 (Route + Distance Overlay Sticker) */}
+          <div
+            onClick={() => scrollToCard(2)}
+            className={`snap-center shrink-0 transition-opacity duration-300 flex items-center justify-center ${activeIndex === 2 ? 'opacity-100' : 'opacity-40 hover:opacity-75 cursor-pointer'
+              }`}
+          >
+            <div
+              className="relative shadow-2xl overflow-hidden ring-1 ring-white/10 rounded-none"
+              style={checkerboardStyle}
+            >
+              <div
+                ref={card3Ref}
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent select-none"
+                style={{ backgroundColor: 'transparent' }}
+              >
+                {/* Route Graphic with Overlaid Left-Aligned Distance Block (Auto fallback to shoe if no route) */}
+                <div className="relative w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] max-h-[175px] sm:max-h-[160px] md:max-h-[170px] flex items-center justify-center shrink-0">
+                  {/* Subtle Gray Route SVG Layer */}
+                  {activity.routeData ? (
+                    <RouteSvg routeStr={activity.routeData} className="w-full h-auto max-h-[175px] sm:max-h-[160px] md:max-h-[170px] text-zinc-400/80" />
+                  ) : (
+                    <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2">
+                      <img
+                        src="/logo-shoe-emerald.png"
+                        alt="PureRun Shoe"
+                        className="w-auto h-auto max-w-[130px] max-h-[130px] sm:max-w-[145px] sm:max-h-[145px] object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] opacity-40 grayscale"
+                      />
+                    </div>
+                  )}
+
+                  {/* Overlaid Large Distance + DISTANCE label aligned to the LEFT */}
+                  <div className="absolute inset-0 flex flex-col items-start justify-center pl-1 pointer-events-none">
+                    <span
+                      className="text-[8.5px] sm:text-[9.5px] font-mono font-black text-emerald-400 uppercase tracking-widest mb-0.5"
+                      style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 16px rgba(0,0,0,0.95)' }}
+                    >
+                      DISTANCE
+                    </span>
+                    <div
+                      className="flex items-baseline gap-1"
+                      style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 24px rgba(0,0,0,0.95)' }}
+                    >
+                      <span className="text-3xl sm:text-4xl font-mono font-black text-white leading-none tracking-tight">
+                        {activity.distanceKm}
+                      </span>
+                      <span className="text-xs sm:text-xs font-black text-emerald-400 font-mono uppercase">
+                        km
+                      </span>
                     </div>
                   </div>
                 </div>
-              )}
 
+                {/* Two-tone PureRun Logo (數據下方) */}
+                <div className="flex items-center justify-center pt-0.5 select-none opacity-90">
+                  <img
+                    src="/logo-text-two-tone.png"
+                    alt="PureRun"
+                    className="h-2.5 sm:h-3 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Template 3: 1:1 經典數據 (Classic Strava Hero) */}
+          <div
+            onClick={() => scrollToCard(3)}
+            className={`snap-center shrink-0 transition-opacity duration-300 flex items-center justify-center ${activeIndex === 3 ? 'opacity-100' : 'opacity-40 hover:opacity-75 cursor-pointer'
+              }`}
+          >
+            <div className="relative shadow-2xl overflow-hidden ring-1 ring-white/10 rounded-none">
+              <div
+                ref={card4Ref}
+                className="relative overflow-hidden rounded-none w-[250px] h-[250px] sm:w-[230px] sm:h-[230px] md:w-[240px] md:h-[240px] transition-all flex flex-col justify-between p-3.5 shadow-black bg-gradient-to-b from-neutral-900 via-neutral-950 to-black"
+              >
+                {/* Background Layer: Ambient Gray Route or Shoe */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                  {activity.routeData ? (
+                    <div className="w-full h-full flex items-center justify-center p-5 sm:p-6 opacity-45">
+                      <RouteSvg routeStr={activity.routeData} className="w-full h-full text-zinc-400" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center p-5 sm:p-6 opacity-20 grayscale">
+                      <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="w-14 h-14 object-contain" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Top Header */}
+                <div className="absolute top-0 inset-x-0 p-3 sm:p-3.5 flex justify-between items-start z-20">
+                  <div className="flex items-center gap-1.5 select-none">
+                    <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="h-3.5 sm:h-4 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
+                    <img src="/logo-text-two-tone.png" alt="PureRun" className="h-2.5 sm:h-3 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
+                  </div>
+                  <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
+                    {formattedDate}
+                  </div>
+                </div>
+
+                {/* Bottom Stats Overlay with Gradient */}
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 pt-7 sm:pt-8 pb-3 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+                  <div className="mb-0.5">
+                    <div className="flex items-baseline gap-1 text-white" style={textShadowStyle}>
+                      <span className="text-3xl sm:text-3xl font-mono font-extrabold leading-none tracking-tight">{activity.distanceKm}</span>
+                      <span className="text-xs sm:text-xs font-bold text-emerald-400">km</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 sm:gap-4 mt-1 pt-1 border-t border-white/15">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
+                        <Timer className="w-2.5 h-2.5" />
+                        <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">配速</span>
+                      </div>
+                      <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
+                        <Route className="w-2.5 h-2.5" />
+                        <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">時間</span>
+                      </div>
+                      <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                    </div>
+                    {activity.avgHr && (
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
+                          <Activity className="w-2.5 h-2.5" />
+                          <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">心率</span>
+                        </div>
+                        <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{activity.avgHr}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Template Indicator: Circular Pagination Dots Navigation (With breathing room) */}
+        <div className="flex items-center justify-center gap-2 pt-2 pb-2 sm:pt-2.5 sm:pb-2.5 shrink-0">
+          {templates.map((tpl, i) => (
+            <button
+              key={tpl.id}
+              onClick={() => scrollToCard(i)}
+              aria-label={tpl.label}
+              className={`transition-all duration-300 rounded-full ${activeIndex === i
+                  ? 'w-5 h-1.5 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'
+                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+                }`}
+              title={tpl.label}
+            />
+          ))}
+        </div>
+
+        {/* Action & Function Control Area Under The Cards */}
+        <div className="w-full max-w-xs sm:max-w-sm mx-auto px-4 pb-3 sm:pb-5 shrink-0 space-y-2 touch-auto">
+          {/* Primary Action Button: Share / Download */}
+          <button
+            onClick={handleShareOrDownload}
+            disabled={isGenerating}
+            className="w-full h-10 sm:h-11 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isGenerating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>生成卡片中...</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4" />
+                <span>分享 / 下載圖片</span>
+              </>
+            )}
+          </button>
+        </div>
+      </main>
+
     </div>
   );
 }

@@ -90,15 +90,15 @@ export default function ClientActivityHrZones({ activity }: Props) {
     <div className="flex-grow space-y-4">
       <div className="space-y-3">
         {hrZones.map(zone => (
-          <div key={zone.name} className="flex items-center gap-3">
-            <span className="text-xs font-medium text-[var(--text-secondary)] w-24 shrink-0 truncate" title={zone.name}>{zone.name}</span>
-            <div className="flex-1 h-2 bg-background rounded-full overflow-hidden border border-border">
+          <div key={zone.name} className="flex items-center gap-2.5 sm:gap-3">
+            <span className="text-xs font-medium text-[var(--text-secondary)] min-w-[85px] sm:min-w-[120px] shrink-0 truncate" title={zone.name}>{zone.name}</span>
+            <div className="flex-1 h-2 sm:h-2.5 bg-background rounded-full overflow-hidden border border-border">
               <div 
                 className="h-full rounded-full transition-all duration-1000 ease-out" 
                 style={{ width: `${zone.value}%`, backgroundColor: zone.color }}
               ></div>
             </div>
-            <span className="text-xs font-mono font-bold text-[var(--text-secondary)] w-12 text-right">{zone.value}%</span>
+            <span className="text-xs font-mono font-bold text-[var(--text-secondary)] w-11 sm:w-12 text-right shrink-0">{zone.value}%</span>
           </div>
         ))}
       </div>

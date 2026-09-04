@@ -10,6 +10,11 @@ import { LayoutDashboard, CalendarDays, Activity, Settings, Target } from 'lucid
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const isSingleActivity = pathname?.startsWith('/activity/') && pathname !== '/activity';
+
+  if (isSingleActivity) {
+    return null;
+  }
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -63,7 +68,7 @@ export default function Sidebar() {
           <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Theme</span>
           <ThemeToggle />
         </div>
-        <SyncGarminButton />
+        <SyncGarminButton variant="full" />
       </div>
     </aside>
   );

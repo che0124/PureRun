@@ -30,6 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -63,14 +64,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body className="antialiased selection:bg-emerald-500/30 selection:text-emerald-50 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 bg-background">
+      <body className="antialiased selection:bg-emerald-500/30 selection:text-emerald-50 bg-background">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className="flex min-h-screen">
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <div className="md:hidden sticky top-0 z-50 w-full">
-                <Navbar />
-              </div>
+              <Navbar />
               <main className="flex-1 flex flex-col">
                 {children}
               </main>

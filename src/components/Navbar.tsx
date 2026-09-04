@@ -9,9 +9,14 @@ import { ThemeToggle } from './ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const isSingleActivity = pathname?.startsWith('/activity/') && pathname !== '/activity';
+
+  if (isSingleActivity) {
+    return null;
+  }
 
   return (
-    <nav className="sticky top-0 bg-background/80 backdrop-blur-xl border-b border-border z-40 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
+    <header className="md:hidden sticky top-0 z-50 w-full bg-background/90 backdrop-blur-xl border-b border-border transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center group py-1">
           <div className="relative h-7 w-36">
@@ -45,7 +50,7 @@ export default function Navbar() {
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute left-0 bottom-0 w-full h-[2px] bg-emerald-405 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    <span className="absolute left-0 bottom-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                   )}
                   <span className={`${isActive ? 'text-[var(--text-accent)]' : 'opacity-70'} text-[10px]`}>{item.icon}</span>
                   <span className="tracking-wide uppercase font-semibold">{item.name}</span>
@@ -58,6 +63,6 @@ export default function Navbar() {
           <SyncGarminButton />
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
