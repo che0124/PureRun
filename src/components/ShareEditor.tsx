@@ -377,6 +377,20 @@ function RouteSvg({
   );
 }
 
+function PureRunLogo({ className = 'h-3.5 sm:h-4' }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-center select-none shrink-0 ${className}`}>
+      <img
+        src={LOGO_TEXT_TWO_TONE}
+        alt="PureRun"
+        loading="eager"
+        decoding="sync"
+        className="h-full w-auto max-h-5 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]"
+      />
+    </div>
+  );
+}
+
 export default function ShareEditor({ activity }: { activity: ActivityData }) {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -468,8 +482,20 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
     setErrorMsg('');
 
     try {
+      // Ensure all images are completely loaded and decoded before capture
+      const imgs = targetRef.current.querySelectorAll('img');
+      await Promise.all(
+        Array.from(imgs).map(img => {
+          if (img.complete) return img.decode?.().catch(() => {}) || Promise.resolve();
+          return new Promise<void>(resolve => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        })
+      );
+
       // Small pause to ensure rendering is complete
-      await new Promise(res => setTimeout(res, 250));
+      await new Promise(res => setTimeout(res, 200));
 
       // Warm-up call for html-to-image (essential for iOS Safari & mobile WebKit rendering)
       try {
@@ -477,6 +503,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
           quality: 1,
           pixelRatio: 1,
           skipAutoScale: true,
+          cacheBust: false,
         });
       } catch {
         // Ignore warm up error
@@ -486,6 +513,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
         quality: 1,
         pixelRatio: 3,
         skipAutoScale: true,
+        cacheBust: false,
       });
 
       if (!blob) throw new Error('圖片轉換失敗');
@@ -660,7 +688,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 <div className="relative z-10 w-full p-3 sm:p-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                   <div className="flex justify-between items-start w-full">
                     <div className="flex items-center select-none">
-                      <img src={LOGO_TEXT_TWO_TONE} alt="PureRun" crossOrigin="anonymous" className="h-3 sm:h-3.5 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <PureRunLogo className="h-3.5 sm:h-4" />
                     </div>
                     <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
                       {formattedDate}
@@ -768,14 +796,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 </div>
 
                 {/* Two-tone PureRun Logo (數據下方，純文字標誌) */}
-                <div className="flex items-center justify-center select-none opacity-90 shrink-0">
-                  <img
-                    src={LOGO_TEXT_TWO_TONE}
-                    alt="PureRun"
-                    crossOrigin="anonymous"
-                    className="h-3 sm:h-3.5 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-                  />
-                </div>
+                <PureRunLogo className="h-3.5 sm:h-4 pt-1" />
               </div>
             </div>
           </div>
@@ -833,14 +854,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 </div>
 
                 {/* Two-tone PureRun Logo (緊鄰軌跡下方，間距適中) */}
-                <div className="flex items-center justify-center select-none opacity-90 shrink-0">
-                  <img
-                    src={LOGO_TEXT_TWO_TONE}
-                    alt="PureRun"
-                    crossOrigin="anonymous"
-                    className="h-3 sm:h-3.5 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-                  />
-                </div>
+                <PureRunLogo className="h-3.5 sm:h-4 pt-1" />
               </div>
             </div>
           </div>
@@ -872,7 +886,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 {/* Top Header */}
                 <div className="absolute top-0 inset-x-0 p-3 sm:p-3.5 flex justify-between items-start z-20">
                   <div className="flex items-center select-none">
-                    <img src={LOGO_TEXT_TWO_TONE} alt="PureRun" crossOrigin="anonymous" className="h-3 sm:h-3.5 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
+                    <PureRunLogo className="h-3.5 sm:h-4" />
                   </div>
                   <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
                     {formattedDate}
