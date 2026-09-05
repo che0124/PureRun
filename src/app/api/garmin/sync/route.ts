@@ -127,11 +127,6 @@ export async function POST(req: Request) {
             // 處理 Metrics (HR, Pace, Cadence)
             if (details.metricDescriptors && details.activityDetailMetrics) {
               const desc = details.metricDescriptors;
-              
-              // DEBUG: 寫出 descriptors 到檔案以確認欄位名稱
-              try {
-                fs.writeFile(path.join(process.cwd(), 'scratch', 'metrics_debug.json'), JSON.stringify(desc, null, 2));
-              } catch (e) {}
 
               const getIndex = (keys: string[]) => {
                 const idx = desc.findIndex((d: any) => keys.includes(d.key));

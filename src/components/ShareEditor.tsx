@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import Link from 'next/link';
+import { LOGO_TEXT_TWO_TONE } from '@/lib/logos';
 
 interface ActivityData {
   id: string;
@@ -163,7 +164,7 @@ function MapRouteView({
   if (!routeStr || !mapData) {
     return (
       <div ref={containerRef} className={`w-full h-full min-h-[160px] bg-neutral-900/90 flex flex-col items-center justify-center gap-2 p-4 text-center ${className || ''}`}>
-        <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="w-12 h-12 object-contain opacity-50" />
+        <Route className="w-8 h-8 text-neutral-400 opacity-60" />
         <span className="text-[11px] font-bold text-neutral-400">無 GPS 軌跡資料</span>
       </div>
     );
@@ -272,11 +273,15 @@ function MapRouteView({
 function RouteSvg({
   routeStr,
   className,
-  strokeWidth = 22,
+  strokeWidth = 10,
+  preserveAspectRatio = 'xMidYMid meet',
+  style,
 }: {
   routeStr: string | null;
   className?: string;
   strokeWidth?: number;
+  preserveAspectRatio?: string;
+  style?: React.CSSProperties;
 }) {
   const routeGeometry = useMemo(() => {
     if (!routeStr) return null;
@@ -325,7 +330,7 @@ function RouteSvg({
       }
 
       // Generous padding so line caps and joints never clip
-      const padding = 45;
+      const padding = 35;
       const viewBoxW = drawW + padding * 2;
       const viewBoxH = drawH + padding * 2;
 
@@ -356,19 +361,10 @@ function RouteSvg({
     <svg
       viewBox={routeGeometry.viewBox}
       className={className}
-      preserveAspectRatio="xMidYMid meet"
+      style={style}
+      preserveAspectRatio={preserveAspectRatio}
     >
-      {/* Dark under-shadow stroke for high contrast on any background */}
-      <path
-        d={routeGeometry.pathData}
-        fill="none"
-        stroke="#000000"
-        strokeWidth={strokeWidth + 8}
-        strokeOpacity={0.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Foreground crisp route path */}
+      {/* Foreground crisp route path (clean without black outline) */}
       <path
         d={routeGeometry.pathData}
         fill="none"
@@ -472,11 +468,22 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
     setErrorMsg('');
 
     try {
-      await new Promise(res => setTimeout(res, 350));
+      // Small pause to ensure rendering is complete
+      await new Promise(res => setTimeout(res, 250));
+
+      // Warm-up call for html-to-image (essential for iOS Safari & mobile WebKit rendering)
+      try {
+        await htmlToImage.toPng(targetRef.current, {
+          quality: 1,
+          pixelRatio: 1,
+          skipAutoScale: true,
+        });
+      } catch {
+        // Ignore warm up error
+      }
 
       const blob = await htmlToImage.toBlob(targetRef.current, {
         quality: 1,
-        cacheBust: true,
         pixelRatio: 3,
         skipAutoScale: true,
       });
@@ -496,8 +503,8 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
           });
           showToast('🎉 分享成功！');
           return;
-        } catch (shareErr: any) {
-          if (shareErr.name === 'AbortError') return;
+        } catch (shareErr: unknown) {
+          if (shareErr instanceof Error && shareErr.name === 'AbortError') return;
         }
       }
 
@@ -652,9 +659,8 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 {/* Top Header Overlay with Dark Gradient */}
                 <div className="relative z-10 w-full p-3 sm:p-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                   <div className="flex justify-between items-start w-full">
-                    <div className="flex items-center gap-1.5 select-none">
-                      <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="h-3.5 sm:h-4 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                      <img src="/logo-text-two-tone.png" alt="PureRun" className="h-2.5 sm:h-3 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                    <div className="flex items-center select-none">
+                      <img src={LOGO_TEXT_TWO_TONE} alt="PureRun" crossOrigin="anonymous" className="h-3 sm:h-3.5 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
                     </div>
                     <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
                       {formattedDate}
@@ -721,51 +727,53 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
             >
               <div
                 ref={card2Ref}
-                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent"
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent select-none"
                 style={{ backgroundColor: 'transparent' }}
               >
-                {/* Center Route Trajectory / Shoe Graphic (Auto fallback to shoe if no route) */}
-                <div className="w-[170px] h-[175px] sm:w-[155px] sm:h-[160px] md:w-[165px] md:h-[170px] flex items-center justify-center shrink-0">
+                {/* Center Route Trajectory (Natural bottom-anchoring so spacing to stats is perfectly consistent) */}
+                <div className="w-[150px] h-[140px] sm:w-[135px] sm:h-[125px] flex items-end justify-center shrink-0">
                   {activity.routeData ? (
-                    <RouteSvg routeStr={activity.routeData} className="w-full h-full text-emerald-400" />
+                    <RouteSvg
+                      routeStr={activity.routeData}
+                      preserveAspectRatio="xMidYMax meet"
+                      className="w-full h-full text-emerald-400"
+                    />
                   ) : (
-                    <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2 animate-in fade-in zoom-in-95 duration-200">
-                      <img
-                        src="/logo-shoe-emerald.png"
-                        alt="PureRun Shoe"
-                        className="w-auto h-auto max-w-[130px] max-h-[130px] sm:max-w-[145px] sm:max-h-[145px] object-contain drop-shadow-[0_8px_20px_rgba(16,185,129,0.4)]"
-                      />
+                    <div className="w-full h-full flex flex-col items-center justify-center p-2 shrink-0 animate-in fade-in zoom-in-95 duration-200">
+                      <Route className="w-10 h-10 text-emerald-400/70" />
+                      <span className="text-[10px] font-bold text-neutral-400 mt-1">無 GPS 軌跡</span>
                     </div>
                   )}
                 </div>
 
-                {/* 3 Core Stats (極簡緊湊橫排，收納在軌跡圖寬度內) */}
-                <div className="w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] flex items-center justify-between text-white px-0.5">
-                  <div className="flex flex-col items-center">
-                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>距離</span>
+                {/* 3 Core Stats (橫向寬敞平均分佈，左右不再擁擠) */}
+                <div className="w-full max-w-[236px] sm:max-w-[218px] flex items-center justify-between text-white px-0.5 shrink-0">
+                  <div className="flex-1 flex flex-col items-center">
+                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>距離</span>
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{activity.distanceKm}</span>
-                      <span className="text-[8px] sm:text-[8.5px] font-bold text-emerald-400">km</span>
+                      <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{activity.distanceKm}</span>
+                      <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400">km</span>
                     </div>
                   </div>
-                  <div className="w-px h-3.5 bg-white/20"></div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>配速</span>
-                    <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                  <div className="w-px h-5 bg-white/20 shrink-0"></div>
+                  <div className="flex-1 flex flex-col items-center">
+                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>配速</span>
+                    <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
                   </div>
-                  <div className="w-px h-3.5 bg-white/20"></div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-[7.5px] sm:text-[8px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>時間</span>
-                    <span className="text-sm sm:text-base font-mono font-extrabold" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                  <div className="w-px h-5 bg-white/20 shrink-0"></div>
+                  <div className="flex-1 flex flex-col items-center">
+                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>時間</span>
+                    <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
                   </div>
                 </div>
 
-                {/* Two-tone PureRun Logo (數據下方) */}
-                <div className="flex items-center justify-center pt-0.5 select-none opacity-90">
+                {/* Two-tone PureRun Logo (數據下方，純文字標誌) */}
+                <div className="flex items-center justify-center select-none opacity-90 shrink-0">
                   <img
-                    src="/logo-text-two-tone.png"
+                    src={LOGO_TEXT_TWO_TONE}
                     alt="PureRun"
-                    className="h-2.5 sm:h-3 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    crossOrigin="anonymous"
+                    className="h-3 sm:h-3.5 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                   />
                 </div>
               </div>
@@ -784,21 +792,21 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
             >
               <div
                 ref={card3Ref}
-                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent select-none"
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-2.5 bg-transparent select-none"
                 style={{ backgroundColor: 'transparent' }}
               >
-                {/* Route Graphic with Overlaid Left-Aligned Distance Block (Auto fallback to shoe if no route) */}
-                <div className="relative w-[170px] h-[175px] sm:w-[155px] sm:h-[160px] md:w-[165px] md:h-[170px] flex items-center justify-center shrink-0">
-                  {/* Subtle Gray Route SVG Layer */}
+                {/* Route Graphic with Overlaid Left-Aligned Distance Block */}
+                <div className="relative w-[160px] h-[145px] sm:w-[150px] sm:h-[135px] flex items-end justify-center shrink-0">
                   {activity.routeData ? (
-                    <RouteSvg routeStr={activity.routeData} className="w-full h-full text-zinc-400/80" />
+                    <RouteSvg
+                      routeStr={activity.routeData}
+                      preserveAspectRatio="xMidYMax meet"
+                      className="w-full h-full text-emerald-400/80"
+                    />
                   ) : (
-                    <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2">
-                      <img
-                        src="/logo-shoe-emerald.png"
-                        alt="PureRun Shoe"
-                        className="w-auto h-auto max-w-[130px] max-h-[130px] sm:max-w-[145px] sm:max-h-[145px] object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] opacity-40 grayscale"
-                      />
+                    <div className="w-full h-full flex flex-col items-center justify-center p-2">
+                      <Route className="w-10 h-10 text-emerald-400/50" />
+                      <span className="text-[10px] font-bold text-neutral-400 mt-1">無 GPS 軌跡</span>
                     </div>
                   )}
 
@@ -824,12 +832,13 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                   </div>
                 </div>
 
-                {/* Two-tone PureRun Logo (數據下方) */}
-                <div className="flex items-center justify-center pt-0.5 select-none opacity-90">
+                {/* Two-tone PureRun Logo (緊鄰軌跡下方，間距適中) */}
+                <div className="flex items-center justify-center select-none opacity-90 shrink-0">
                   <img
-                    src="/logo-text-two-tone.png"
+                    src={LOGO_TEXT_TWO_TONE}
                     alt="PureRun"
-                    className="h-2.5 sm:h-3 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    crossOrigin="anonymous"
+                    className="h-3 sm:h-3.5 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                   />
                 </div>
               </div>
@@ -854,17 +863,16 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                       <RouteSvg routeStr={activity.routeData} className="w-full h-full text-zinc-400" />
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center p-5 sm:p-6 opacity-20 grayscale">
-                      <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="w-14 h-14 object-contain" />
+                    <div className="w-full h-full flex flex-col items-center justify-center p-5 sm:p-6 opacity-30">
+                      <Route className="w-12 h-12 text-zinc-400" />
                     </div>
                   )}
                 </div>
 
                 {/* Top Header */}
                 <div className="absolute top-0 inset-x-0 p-3 sm:p-3.5 flex justify-between items-start z-20">
-                  <div className="flex items-center gap-1.5 select-none">
-                    <img src="/logo-shoe-emerald.png" alt="PureRun Shoe" className="h-3.5 sm:h-4 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
-                    <img src="/logo-text-two-tone.png" alt="PureRun" className="h-2.5 sm:h-3 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
+                  <div className="flex items-center select-none">
+                    <img src={LOGO_TEXT_TWO_TONE} alt="PureRun" crossOrigin="anonymous" className="h-3 sm:h-3.5 w-auto object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" />
                   </div>
                   <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
                     {formattedDate}
