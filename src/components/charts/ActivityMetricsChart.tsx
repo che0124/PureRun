@@ -28,6 +28,7 @@ export default function ActivityMetricsChart({ data }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
+        appendToBody: true,
         backgroundColor: theme.tooltipBg,
         textStyle: { color: theme.tooltipText },
         axisPointer: { type: 'cross', label: { backgroundColor: theme.tooltipBg } },
@@ -61,26 +62,26 @@ export default function ActivityMetricsChart({ data }: Props) {
       title: [
         {
           text: '配速 (min/km)',
-          left: 36,
-          top: '1.5%',
+          left: 50,
+          top: '1.2%',
           textStyle: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold' }
         },
         {
           text: '心率 (BPM)',
-          left: 36,
-          top: '26.5%',
+          left: 50,
+          top: '26.2%',
           textStyle: { color: '#ef4444', fontSize: 12, fontWeight: 'bold' }
         },
         {
           text: '步頻 (SPM)',
-          left: 36,
-          top: '51.5%',
+          left: 50,
+          top: '51.2%',
           textStyle: { color: '#8b5cf6', fontSize: 12, fontWeight: 'bold' }
         },
         {
           text: '海拔 (m)',
-          left: 36,
-          top: '76.5%',
+          left: 50,
+          top: '76.2%',
           textStyle: { color: '#10b981', fontSize: 12, fontWeight: 'bold' }
         }
       ],
@@ -91,16 +92,17 @@ export default function ActivityMetricsChart({ data }: Props) {
         link: [{ xAxisIndex: 'all' }],
       },
       grid: [
-        { left: 36, right: 8, top: '5.5%', height: '17%', containLabel: false },
-        { left: 36, right: 8, top: '30.5%', height: '17%', containLabel: false },
-        { left: 36, right: 8, top: '55.5%', height: '17%', containLabel: false },
-        { left: 36, right: 8, top: '80.5%', height: '15%', containLabel: false }
+        { left: 50, right: 32, top: '5.5%', height: '17%', containLabel: false },
+        { left: 50, right: 32, top: '30.5%', height: '17%', containLabel: false },
+        { left: 50, right: 32, top: '55.5%', height: '17%', containLabel: false },
+        { left: 50, right: 32, top: '80.5%', height: '15%', containLabel: false }
       ],
       xAxis: [
         {
           type: 'category',
           data: xAxisData,
           gridIndex: 0,
+          boundaryGap: false,
           axisLine: { lineStyle: { color: theme.axisLineColor } },
           axisLabel: { show: false },
         },
@@ -108,6 +110,7 @@ export default function ActivityMetricsChart({ data }: Props) {
           type: 'category',
           data: xAxisData,
           gridIndex: 1,
+          boundaryGap: false,
           axisLine: { lineStyle: { color: theme.axisLineColor } },
           axisLabel: { show: false },
         },
@@ -115,6 +118,7 @@ export default function ActivityMetricsChart({ data }: Props) {
           type: 'category',
           data: xAxisData,
           gridIndex: 2,
+          boundaryGap: false,
           axisLine: { lineStyle: { color: theme.axisLineColor } },
           axisLabel: { show: false },
         },
@@ -122,8 +126,14 @@ export default function ActivityMetricsChart({ data }: Props) {
           type: 'category',
           data: xAxisData,
           gridIndex: 3,
+          boundaryGap: false,
           axisLine: { lineStyle: { color: theme.axisLineColor } },
-          axisLabel: { color: theme.subtextColor },
+          axisLabel: {
+            color: theme.subtextColor,
+            fontSize: 10,
+            showMaxLabel: true,
+            showMinLabel: true,
+          },
         }
       ],
       yAxis: [

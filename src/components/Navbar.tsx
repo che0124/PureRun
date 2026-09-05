@@ -16,7 +16,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="md:hidden sticky top-0 z-50 w-full bg-background/90 backdrop-blur-xl border-b border-border transition-all duration-300">
+    <header className="md:hidden sticky top-0 z-50 w-full bg-background/90 backdrop-blur-xl border-b border-border transition-all duration-300 pt-safe">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center group py-1">
           <div className="relative h-7 w-36">

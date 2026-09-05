@@ -269,18 +269,33 @@ function MapRouteView({
   );
 }
 
-function RouteSvg({ routeStr, className }: { routeStr: string | null; className?: string }) {
+function RouteSvg({
+  routeStr,
+  className,
+  strokeWidth = 22,
+}: {
+  routeStr: string | null;
+  className?: string;
+  strokeWidth?: number;
+}) {
   const routeGeometry = useMemo(() => {
     if (!routeStr) return null;
     try {
-      const points = JSON.parse(routeStr) as [number, number][];
-      if (!points || points.length === 0) return null;
+      const rawPoints = (typeof routeStr === 'string' ? JSON.parse(routeStr) : routeStr) as [number, number][];
+      if (!Array.isArray(rawPoints) || rawPoints.length < 2) return null;
 
-      const lats = points.map(p => p[0]);
-      const rawCy = (Math.min(...lats) + Math.max(...lats)) / 2;
-      const cosLat = Math.cos((rawCy * Math.PI) / 180);
+      const validPoints = rawPoints.filter(
+        p => Array.isArray(p) && p.length >= 2 && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
+      );
+      if (validPoints.length < 2) return null;
 
-      const projPoints = points.map(([lat, lon]) => ({
+      const lats = validPoints.map(p => p[0]);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const centerLat = (minLat + maxLat) / 2;
+      const cosLat = Math.cos((centerLat * Math.PI) / 180);
+
+      const projPoints = validPoints.map(([lat, lon]) => ({
         x: lon * cosLat,
         y: -lat,
       }));
@@ -293,26 +308,42 @@ function RouteSvg({ routeStr, className }: { routeStr: string | null; className?
       const minY = Math.min(...ys);
       const maxY = Math.max(...ys);
 
-      const rawW = maxX - minX || 0.0001;
-      const rawH = maxY - minY || 0.0001;
+      const rawW = maxX - minX || 0.00001;
+      const rawH = maxY - minY || 0.00001;
 
-      // Small uniform 6% margin so strokes are never clipped
-      const paddingX = rawW * 0.06;
-      const paddingY = rawH * 0.06;
-      const paddedMinX = minX - paddingX;
-      const paddedMinY = minY - paddingY;
-      const paddedW = rawW + paddingX * 2;
-      const paddedH = rawH + paddingY * 2;
+      // Base dimension for standard SVG coordinate system (immune to mobile subpixel / vectorEffect bugs)
+      const BASE_SIZE = 800;
+      let drawW: number;
+      let drawH: number;
 
-      const pathData = projPoints.map((p, i) => {
-        const x = p.x - paddedMinX;
-        const y = p.y - paddedMinY;
-        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(6)} ${y.toFixed(6)}`;
-      }).join(' ');
+      if (rawW >= rawH) {
+        drawW = BASE_SIZE;
+        drawH = Math.max(20, Math.round(BASE_SIZE * (rawH / rawW)));
+      } else {
+        drawH = BASE_SIZE;
+        drawW = Math.max(20, Math.round(BASE_SIZE * (rawW / rawH)));
+      }
+
+      // Generous padding so line caps and joints never clip
+      const padding = 45;
+      const viewBoxW = drawW + padding * 2;
+      const viewBoxH = drawH + padding * 2;
+
+      const scaleX = drawW / rawW;
+      const scaleY = drawH / rawH;
+
+      const pixelPoints = projPoints.map(p => ({
+        x: (p.x - minX) * scaleX + padding,
+        y: (p.y - minY) * scaleY + padding,
+      }));
+
+      const pathData = pixelPoints
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join(' ');
 
       return {
         pathData,
-        viewBox: `0 0 ${paddedW.toFixed(6)} ${paddedH.toFixed(6)}`,
+        viewBox: `0 0 ${viewBoxW} ${viewBoxH}`,
       };
     } catch {
       return null;
@@ -325,14 +356,24 @@ function RouteSvg({ routeStr, className }: { routeStr: string | null; className?
     <svg
       viewBox={routeGeometry.viewBox}
       className={className}
-      style={{ filter: 'drop-shadow(0px 3px 6px rgba(0,0,0,0.6))' }}
+      preserveAspectRatio="xMidYMid meet"
     >
+      {/* Dark under-shadow stroke for high contrast on any background */}
+      <path
+        d={routeGeometry.pathData}
+        fill="none"
+        stroke="#000000"
+        strokeWidth={strokeWidth + 8}
+        strokeOpacity={0.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Foreground crisp route path */}
       <path
         d={routeGeometry.pathData}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.5"
-        vectorEffect="non-scaling-stroke"
+        strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -518,8 +559,8 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
     <div className="fixed inset-0 h-[100dvh] z-[60] bg-neutral-950 text-[var(--text-primary)] font-sans flex flex-col justify-between select-none overflow-hidden">
 
       {/* Top Header */}
-      <header className="h-16 bg-neutral-950/90 backdrop-blur-xl border-b border-border/60 shrink-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+      <header className="bg-neutral-950/90 backdrop-blur-xl border-b border-border/60 shrink-0 z-50 pt-safe">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <Link
             href={`/activity/${activity.id}`}
             className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
@@ -540,7 +581,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
 
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none">
+        <div className="fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none">
           <div className="px-4 py-1.5 bg-emerald-500 text-white text-xs sm:text-sm font-bold rounded-full shadow-2xl flex items-center gap-2 border border-emerald-400/40 backdrop-blur-md pointer-events-auto">
             <Check className="w-4 h-4" />
             <span>{toastMsg}</span>
@@ -550,7 +591,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
 
       {/* Error Message */}
       {errorMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none">
+        <div className="fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none">
           <div className="p-2 bg-rose-500/90 text-white rounded-xl text-xs text-center font-bold shadow-lg pointer-events-auto">{errorMsg}</div>
         </div>
       )}
@@ -684,9 +725,9 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 style={{ backgroundColor: 'transparent' }}
               >
                 {/* Center Route Trajectory / Shoe Graphic (Auto fallback to shoe if no route) */}
-                <div className="w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] max-h-[175px] sm:max-h-[160px] md:max-h-[170px] flex items-center justify-center shrink-0">
+                <div className="w-[170px] h-[175px] sm:w-[155px] sm:h-[160px] md:w-[165px] md:h-[170px] flex items-center justify-center shrink-0">
                   {activity.routeData ? (
-                    <RouteSvg routeStr={activity.routeData} className="w-full h-auto max-h-[175px] sm:max-h-[160px] md:max-h-[170px] text-emerald-400" />
+                    <RouteSvg routeStr={activity.routeData} className="w-full h-full text-emerald-400" />
                   ) : (
                     <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2 animate-in fade-in zoom-in-95 duration-200">
                       <img
@@ -747,10 +788,10 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 style={{ backgroundColor: 'transparent' }}
               >
                 {/* Route Graphic with Overlaid Left-Aligned Distance Block (Auto fallback to shoe if no route) */}
-                <div className="relative w-full max-w-[170px] sm:max-w-[155px] md:max-w-[165px] max-h-[175px] sm:max-h-[160px] md:max-h-[170px] flex items-center justify-center shrink-0">
+                <div className="relative w-[170px] h-[175px] sm:w-[155px] sm:h-[160px] md:w-[165px] md:h-[170px] flex items-center justify-center shrink-0">
                   {/* Subtle Gray Route SVG Layer */}
                   {activity.routeData ? (
-                    <RouteSvg routeStr={activity.routeData} className="w-full h-auto max-h-[175px] sm:max-h-[160px] md:max-h-[170px] text-zinc-400/80" />
+                    <RouteSvg routeStr={activity.routeData} className="w-full h-full text-zinc-400/80" />
                   ) : (
                     <div className="w-full h-full max-h-[135px] sm:max-h-[145px] flex items-center justify-center p-2">
                       <img

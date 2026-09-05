@@ -25,7 +25,7 @@ export default function ActivityDetailHeader({
   };
 
   return (
-    <header className="sticky top-0 z-[100] w-full bg-background/95 backdrop-blur-xl border-b border-border/80 shadow-sm transition-all">
+    <header className="sticky top-0 z-[100] w-full bg-background/95 backdrop-blur-xl border-b border-border/80 shadow-sm transition-all pt-safe">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         <button
           type="button"
