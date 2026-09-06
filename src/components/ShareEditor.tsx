@@ -229,42 +229,6 @@ function MapRouteView({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-
-        {/* Start Marker (起) */}
-        {showMarkers && mapData.startPt && (
-          <g transform={`translate(${mapData.startPt.x}, ${mapData.startPt.y})`}>
-            <circle r="11" fill="#3b82f6" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.6))" />
-            <circle r="10" fill="#3b82f6" stroke="#ffffff" strokeWidth="2.5" />
-            <text
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#ffffff"
-              fontSize="9"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              起
-            </text>
-          </g>
-        )}
-
-        {/* Finish Marker (終) */}
-        {showMarkers && mapData.endPt && (
-          <g transform={`translate(${mapData.endPt.x}, ${mapData.endPt.y})`}>
-            <circle r="11" fill="#ef4444" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.6))" />
-            <circle r="10" fill="#ef4444" stroke="#ffffff" strokeWidth="2.5" />
-            <text
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#ffffff"
-              fontSize="9"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              終
-            </text>
-          </g>
-        )}
       </svg>
     </div>
   );
@@ -273,7 +237,7 @@ function MapRouteView({
 function RouteSvg({
   routeStr,
   className,
-  strokeWidth = 10,
+  strokeWidth = 20,
   preserveAspectRatio = 'xMidYMid meet',
   style,
 }: {
@@ -486,7 +450,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
       const imgs = targetRef.current.querySelectorAll('img');
       await Promise.all(
         Array.from(imgs).map(img => {
-          if (img.complete) return img.decode?.().catch(() => {}) || Promise.resolve();
+          if (img.complete) return img.decode?.().catch(() => { }) || Promise.resolve();
           return new Promise<void>(resolve => {
             img.onload = () => resolve();
             img.onerror = () => resolve();
@@ -592,7 +556,6 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
 
   return (
     <div className="fixed inset-0 h-[100dvh] z-[60] bg-neutral-950 text-[var(--text-primary)] font-sans flex flex-col justify-between select-none overflow-hidden">
-
       {/* Top Header */}
       <header className="bg-neutral-950/90 backdrop-blur-xl border-b border-border/60 shrink-0 z-50 pt-safe">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -609,8 +572,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
             分享活動
           </div>
 
-          {/* Spacer to balance the back button on the left for centering */}
-          <div className="w-8 sm:w-28" />
+          <div className="w-8 sm:w-8" />
         </div>
       </header>
 
@@ -627,7 +589,9 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
       {/* Error Message */}
       {errorMsg && (
         <div className="fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none">
-          <div className="p-2 bg-rose-500/90 text-white rounded-xl text-xs text-center font-bold shadow-lg pointer-events-auto">{errorMsg}</div>
+          <div className="p-3 bg-rose-500/90 backdrop-blur-md text-white rounded-xl text-xs sm:text-sm text-center font-bold shadow-lg border border-rose-400/40 pointer-events-auto">
+            {errorMsg}
+          </div>
         </div>
       )}
 
@@ -679,18 +643,18 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                     showMarkers={false}
                     showWhiteOutline={false}
                     paddingTop={36}
-                    paddingBottom={105}
+                    paddingBottom={115}
                     paddingX={12}
                   />
                 </div>
 
                 {/* Top Header Overlay with Dark Gradient */}
                 <div className="relative z-10 w-full p-3 sm:p-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
-                  <div className="flex justify-between items-start w-full">
+                  <div className="flex justify-between items-center w-full">
                     <div className="flex items-center select-none">
-                      <PureRunLogo className="h-3.5 sm:h-4" />
+                      <PureRunLogo className="h-4 sm:h-4.5" />
                     </div>
-                    <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
+                    <div className="text-white font-sans font-bold text-[9.5px] sm:text-[10.5px] tracking-wide" style={textShadowStyle}>
                       {formattedDate}
                     </div>
                   </div>
@@ -700,41 +664,41 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 <div className="flex-1" />
 
                 {/* Bottom Stats Overlay with Dark Gradient */}
-                <div className="relative z-10 w-full p-3 sm:p-3.5 pt-7 sm:pt-8 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                  <div className="mb-1 sm:mb-1.5">
-                    <span className="text-emerald-400 text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider block mb-0.5" style={textShadowStyle}>總距離</span>
+                <div className="relative z-10 w-full p-3.5 sm:p-4 pt-8 sm:pt-9 bg-gradient-to-t from-black/95 via-black/65 to-transparent">
+                  <div className="mb-1.5 sm:mb-2">
+                    <span className="text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest block mb-0.5" style={textShadowStyle}>總距離</span>
                     <div className="flex items-baseline gap-1 text-white" style={textShadowStyle}>
-                      <span className="text-3xl sm:text-4xl font-mono font-extrabold leading-none tracking-tight">{activity.distanceKm}</span>
-                      <span className="text-xs sm:text-sm font-bold text-emerald-400">km</span>
+                      <span className="text-4xl sm:text-5xl font-mono font-black leading-none tracking-tight">{activity.distanceKm}</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-emerald-400 uppercase">km</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-y-1 gap-x-2">
+                  <div className="grid grid-cols-2 gap-y-1.5 gap-x-2.5">
                     <div>
-                      <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
-                        <Timer className="w-2.5 h-2.5" /> 配速
+                      <span className="text-emerald-400 text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider flex items-center gap-1 mb-0.5" style={textShadowStyle}>
+                        <Timer className="w-3 h-3" /> 配速
                       </span>
-                      <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</div>
+                      <div className="text-sm sm:text-base font-mono font-black text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</div>
                     </div>
                     <div>
-                      <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
-                        <Route className="w-2.5 h-2.5" /> 時間
+                      <span className="text-emerald-400 text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider flex items-center gap-1 mb-0.5" style={textShadowStyle}>
+                        <Route className="w-3 h-3" /> 時間
                       </span>
-                      <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</div>
+                      <div className="text-sm sm:text-base font-mono font-black text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</div>
                     </div>
                     {activity.avgHr && (
                       <div>
-                        <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
-                          <Activity className="w-2.5 h-2.5" /> 心率
+                        <span className="text-emerald-400 text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider flex items-center gap-1 mb-0.5" style={textShadowStyle}>
+                          <Activity className="w-3 h-3" /> 心率
                         </span>
-                        <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.avgHr}</div>
+                        <div className="text-sm sm:text-base font-mono font-black text-white" style={textShadowStyle}>{activity.avgHr}</div>
                       </div>
                     )}
                     {activity.calories && (
                       <div>
-                        <span className="text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider flex items-center gap-0.5 mb-0.5" style={textShadowStyle}>
-                          <Sparkles className="w-2.5 h-2.5" /> 熱量
+                        <span className="text-emerald-400 text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider flex items-center gap-1 mb-0.5" style={textShadowStyle}>
+                          <Sparkles className="w-3 h-3" /> 熱量
                         </span>
-                        <div className="text-xs sm:text-sm font-mono font-bold text-white" style={textShadowStyle}>{activity.calories}</div>
+                        <div className="text-sm sm:text-base font-mono font-black text-white" style={textShadowStyle}>{activity.calories}</div>
                       </div>
                     )}
                   </div>
@@ -755,15 +719,37 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
             >
               <div
                 ref={card2Ref}
-                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-3.5 bg-transparent select-none"
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-2 sm:gap-4.5 bg-transparent select-none"
                 style={{ backgroundColor: 'transparent' }}
               >
-                {/* Center Route Trajectory (Natural bottom-anchoring so spacing to stats is perfectly consistent) */}
-                <div className="w-[150px] h-[140px] sm:w-[135px] sm:h-[125px] flex items-end justify-center shrink-0">
+                {/* 3 Core Stats (垂直排列，字體放大且層次分明) */}
+                <div className="flex flex-col items-center gap-2 sm:gap-3 text-white shrink-0">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5" style={textShadowStyle}>距離</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-mono font-black leading-none tracking-tight" style={textShadowStyle}>{activity.distanceKm}</span>
+                      <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 uppercase">km</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5" style={textShadowStyle}>配速</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-mono font-black leading-tight tracking-tight" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                      <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 uppercase">/km</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9.5px] sm:text-[10.5px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5" style={textShadowStyle}>時間</span>
+                    <span className="text-3xl sm:text-4xl font-mono font-black leading-tight tracking-tight" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                  </div>
+                </div>
+
+                {/* Route Trajectory (Top Center) */}
+                <div className="w-[145px] h-[115px] sm:w-[155px] sm:h-[125px] flex items-center justify-center shrink-0">
                   {activity.routeData ? (
                     <RouteSvg
                       routeStr={activity.routeData}
-                      preserveAspectRatio="xMidYMax meet"
+                      preserveAspectRatio="xMidYMid meet"
                       className="w-full h-full text-emerald-400"
                     />
                   ) : (
@@ -774,29 +760,8 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                   )}
                 </div>
 
-                {/* 3 Core Stats (橫向寬敞平均分佈，左右不再擁擠) */}
-                <div className="w-full max-w-[236px] sm:max-w-[218px] flex items-center justify-between text-white px-0.5 shrink-0">
-                  <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>距離</span>
-                    <div className="flex items-baseline gap-0.5">
-                      <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{activity.distanceKm}</span>
-                      <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400">km</span>
-                    </div>
-                  </div>
-                  <div className="w-px h-5 bg-white/20 shrink-0"></div>
-                  <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>配速</span>
-                    <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
-                  </div>
-                  <div className="w-px h-5 bg-white/20 shrink-0"></div>
-                  <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5" style={textShadowStyle}>時間</span>
-                    <span className="text-lg sm:text-xl font-mono font-black" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
-                  </div>
-                </div>
-
-                {/* Two-tone PureRun Logo (數據下方，純文字標誌) */}
-                <PureRunLogo className="h-3.5 sm:h-4 pt-1" />
+                {/* Two-tone PureRun Logo */}
+                <PureRunLogo className="h-6 sm:h-6 pt-1" />
               </div>
             </div>
           </div>
@@ -813,15 +778,15 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
             >
               <div
                 ref={card3Ref}
-                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-2.5 bg-transparent select-none"
+                className="relative overflow-hidden rounded-none w-[250px] h-[444px] sm:w-[230px] sm:h-[408px] md:w-[240px] md:h-[426px] p-4 flex flex-col justify-center items-center gap-2 sm:gap-4.5 bg-transparent select-none"
                 style={{ backgroundColor: 'transparent' }}
               >
                 {/* Route Graphic with Overlaid Left-Aligned Distance Block */}
-                <div className="relative w-[160px] h-[145px] sm:w-[150px] sm:h-[135px] flex items-end justify-center shrink-0">
+                <div className="relative w-[170px] h-[155px] sm:w-[160px] sm:h-[145px] flex items-center justify-center shrink-0">
                   {activity.routeData ? (
                     <RouteSvg
                       routeStr={activity.routeData}
-                      preserveAspectRatio="xMidYMax meet"
+                      preserveAspectRatio="xMidYMid meet"
                       className="w-full h-full text-emerald-400/80"
                     />
                   ) : (
@@ -834,7 +799,7 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                   {/* Overlaid Large Distance + DISTANCE label aligned to the LEFT */}
                   <div className="absolute inset-0 flex flex-col items-start justify-center pl-1 pointer-events-none">
                     <span
-                      className="text-[8.5px] sm:text-[9.5px] font-mono font-black text-emerald-400 uppercase tracking-widest mb-0.5"
+                      className="text-[9.5px] sm:text-[10.5px] font-mono font-black text-emerald-400 uppercase tracking-widest mb-0.5"
                       style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 16px rgba(0,0,0,0.95)' }}
                     >
                       DISTANCE
@@ -843,18 +808,18 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                       className="flex items-baseline gap-1"
                       style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 24px rgba(0,0,0,0.95)' }}
                     >
-                      <span className="text-3xl sm:text-4xl font-mono font-black text-white leading-none tracking-tight">
+                      <span className="text-4xl sm:text-5xl font-mono font-black text-white leading-none tracking-tight">
                         {activity.distanceKm}
                       </span>
-                      <span className="text-xs sm:text-xs font-black text-emerald-400 font-mono uppercase">
+                      <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono uppercase">
                         km
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Two-tone PureRun Logo (緊鄰軌跡下方，間距適中) */}
-                <PureRunLogo className="h-3.5 sm:h-4 pt-1" />
+                {/* Two-tone PureRun Logo */}
+                <PureRunLogo className="h-6 sm:h-6 pt-1" />
               </div>
             </div>
           </div>
@@ -884,45 +849,45 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
                 </div>
 
                 {/* Top Header */}
-                <div className="absolute top-0 inset-x-0 p-3 sm:p-3.5 flex justify-between items-start z-20">
+                <div className="absolute top-0 inset-x-0 p-3 sm:p-3.5 flex justify-between items-center z-20">
                   <div className="flex items-center select-none">
                     <PureRunLogo className="h-3.5 sm:h-4" />
                   </div>
-                  <div className="text-white font-sans font-bold text-[8.5px] sm:text-[9.5px] tracking-wide" style={textShadowStyle}>
+                  <div className="text-white font-sans font-bold text-[9px] sm:text-[10px] tracking-wide" style={textShadowStyle}>
                     {formattedDate}
                   </div>
                 </div>
 
                 {/* Bottom Stats Overlay with Gradient */}
-                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 pt-7 sm:pt-8 pb-3 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-                  <div className="mb-0.5">
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 pt-7 sm:pt-8 pb-3 z-10 bg-gradient-to-t from-black/95 via-black/60 to-transparent">
+                  <div className="mb-1">
                     <div className="flex items-baseline gap-1 text-white" style={textShadowStyle}>
-                      <span className="text-3xl sm:text-3xl font-mono font-extrabold leading-none tracking-tight">{activity.distanceKm}</span>
-                      <span className="text-xs sm:text-xs font-bold text-emerald-400">km</span>
+                      <span className="text-3xl sm:text-4xl font-mono font-black leading-none tracking-tight">{activity.distanceKm}</span>
+                      <span className="text-xs sm:text-sm font-mono font-bold text-emerald-400 uppercase">km</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 sm:gap-4 mt-1 pt-1 border-t border-white/15">
+                  <div className="flex items-center gap-3 sm:gap-4 mt-1 pt-1.5 border-t border-white/15">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
                         <Timer className="w-2.5 h-2.5" />
-                        <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">配速</span>
+                        <span className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider">配速</span>
                       </div>
-                      <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
+                      <span className="text-xs sm:text-sm font-mono font-black text-white" style={textShadowStyle}>{activity.avgPaceStr || '--'}</span>
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
                         <Route className="w-2.5 h-2.5" />
-                        <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">時間</span>
+                        <span className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider">時間</span>
                       </div>
-                      <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
+                      <span className="text-xs sm:text-sm font-mono font-black text-white" style={textShadowStyle}>{formatDuration(activity.durationMin)}</span>
                     </div>
                     {activity.avgHr && (
                       <div className="flex flex-col">
                         <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
                           <Activity className="w-2.5 h-2.5" />
-                          <span className="text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider">心率</span>
+                          <span className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider">心率</span>
                         </div>
-                        <span className="text-xs sm:text-xs font-mono font-bold text-white" style={textShadowStyle}>{activity.avgHr}</span>
+                        <span className="text-xs sm:text-sm font-mono font-black text-white" style={textShadowStyle}>{activity.avgHr}</span>
                       </div>
                     )}
                   </div>
@@ -940,8 +905,8 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
               onClick={() => scrollToCard(i)}
               aria-label={tpl.label}
               className={`transition-all duration-300 rounded-full ${activeIndex === i
-                  ? 'w-5 h-1.5 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'
-                  : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
+                ? 'w-5 h-1.5 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]'
+                : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'
                 }`}
               title={tpl.label}
             />
@@ -970,7 +935,6 @@ export default function ShareEditor({ activity }: { activity: ActivityData }) {
           </button>
         </div>
       </main>
-
     </div>
   );
 }
